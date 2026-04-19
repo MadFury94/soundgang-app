@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Footer() {
     return (
@@ -8,10 +9,13 @@ export default function Footer() {
                     {/* Brand Section */}
                     <div className="sm:col-span-2 lg:col-span-1">
                         <div className="flex items-center gap-2 mb-4">
-                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded flex items-center justify-center">
-                                <span className="text-black font-bold text-xl sm:text-2xl">SG</span>
-                            </div>
-                            <span className="text-xl sm:text-2xl font-bold tracking-wide">SOUNDGANG</span>
+                            <Image
+                                src="/soundgang-logo.png"
+                                alt="SoundGang Logo"
+                                width={77}
+                                height={77}
+                                className="w-16 h-16 sm:w-20 sm:h-20 object-contain"
+                            />
                         </div>
                         <p className="text-gray-400 text-sm sm:text-base leading-relaxed max-w-sm">
                             A Nigerian record label dedicated to discovering and amplifying contemporary African music on the global stage.

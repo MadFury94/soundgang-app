@@ -2,14 +2,25 @@ interface PageHeaderProps {
     title: string;
     subtitle?: string;
     backgroundImage?: string;
+    backgroundVideo?: string;
 }
 
-export default function PageHeader({ title, subtitle, backgroundImage }: PageHeaderProps) {
+export default function PageHeader({ title, subtitle, backgroundImage, backgroundVideo }: PageHeaderProps) {
     return (
         <section className="relative h-[400px] lg:h-[500px] flex items-center justify-center overflow-hidden">
-            {/* Background Image with Overlay */}
+            {/* Background Video or Image with Overlay */}
             <div className="absolute inset-0">
-                {backgroundImage ? (
+                {backgroundVideo ? (
+                    <video
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className="absolute inset-0 w-full h-full object-cover"
+                    >
+                        <source src={backgroundVideo} type="video/mp4" />
+                    </video>
+                ) : backgroundImage ? (
                     <div
                         className="absolute inset-0 bg-cover bg-center"
                         style={{ backgroundImage: `url(${backgroundImage})` }}

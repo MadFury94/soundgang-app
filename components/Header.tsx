@@ -2,10 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 
 export default function Header() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const pathname = usePathname();
 
     const navLinks = [
         { href: '/', label: 'Home' },
@@ -16,16 +19,26 @@ export default function Header() {
         { href: '/contact', label: 'Contact' }
     ];
 
+    const isActive = (href: string) => {
+        if (href === '/') {
+            return pathname === '/';
+        }
+        return pathname.startsWith(href);
+    };
+
     return (
-        <header className="bg-black text-white border-b border-gray-800 sticky top-0 z-50">
+        <header className="bg-gray-900/95 backdrop-blur-sm text-white border-b border-gray-800 sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-20">
+                <div className="flex items-center justify-between h-28">
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-3 z-50">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded flex items-center justify-center">
-                            <span className="text-black font-bold text-xl sm:text-2xl">SG</span>
-                        </div>
-                        <span className="text-xl sm:text-2xl font-bold tracking-wide">SOUNDGANG</span>
+                        <Image
+                            src="/soundgang-logo.png"
+                            alt="SoundGang Logo"
+                            width={100}
+                            height={100}
+                            className="w-20 h-20 sm:w-24 sm:h-24 object-contain"
+                        />
                     </Link>
 
                     {/* Desktop Navigation */}
@@ -34,9 +47,13 @@ export default function Header() {
                             <Link
                                 key={link.href}
                                 href={link.href}
-                                className="text-base font-medium hover:text-[#8B9D7F] transition-colors"
+                                className="relative text-lg font-medium hover:text-[#8B9D7F] transition-colors group"
                             >
                                 {link.label}
+                                <span
+                                    className={`absolute -bottom-[37px] left-0 right-0 h-0.5 bg-[#8B9D7F] transition-opacity ${isActive(link.href) ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'
+                                        }`}
+                                />
                             </Link>
                         ))}
                     </nav>
@@ -44,7 +61,7 @@ export default function Header() {
                     {/* Desktop CTA Button */}
                     <Link
                         href="/submit"
-                        className="hidden sm:block bg-[#8B9D7F] hover:bg-[#7a8c6f] text-white font-semibold text-sm px-4 lg:px-6 py-3 rounded-lg transition-colors whitespace-nowrap"
+                        className="hidden sm:block bg-[#8B9D7F] hover:bg-[#7a8c6f] text-white font-semibold text-base px-5 lg:px-7 py-3.5 rounded-lg transition-colors whitespace-nowrap"
                     >
                         SUBMIT MUSIC
                     </Link>
@@ -62,14 +79,15 @@ export default function Header() {
 
             {/* Mobile Menu */}
             {mobileMenuOpen && (
-                <div className="lg:hidden fixed inset-0 top-20 bg-black/95 backdrop-blur-sm z-40">
+                <div className="lg:hidden fixed inset-0 top-28 bg-gray-900/98 backdrop-blur-md z-40">
                     <nav className="flex flex-col items-center justify-center h-full gap-8 px-4">
                         {navLinks.map((link) => (
                             <Link
                                 key={link.href}
                                 href={link.href}
                                 onClick={() => setMobileMenuOpen(false)}
-                                className="text-2xl font-semibold hover:text-[#8B9D7F] transition-colors"
+                                className={`text-2xl font-semibold transition-colors ${isActive(link.href) ? 'text-[#8B9D7F]' : 'hover:text-[#8B9D7F]'
+                                    }`}
                             >
                                 {link.label}
                             </Link>

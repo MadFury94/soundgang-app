@@ -6,6 +6,52 @@ export default function ArtistsPage() {
     const artists = [
         {
             id: 1,
+            slug: 'burna-boy',
+            name: 'Burna Boy',
+            genre: 'Afrobeats, Reggae',
+            bio: 'Grammy-winning artist taking African music to the world',
+            image: '/artists/burna-boy.jpg',
+            albumCount: 7,
+            social: {
+                instagram: 'https://instagram.com/burnaboygram',
+                twitter: 'https://twitter.com/burnaboy',
+                youtube: 'https://youtube.com/@burnaboy',
+                spotify: 'https://open.spotify.com/artist/3wcj11K77LjEY1PkEazffa'
+            }
+        },
+        {
+            id: 2,
+            slug: 'wizkid',
+            name: 'Wizkid',
+            genre: 'Afrobeats, R&B',
+            bio: 'International superstar and Afrobeats pioneer',
+            image: '/artists/wizkid.jpg',
+            albumCount: 5,
+            social: {
+                instagram: 'https://instagram.com/wizkidayo',
+                twitter: 'https://twitter.com/wizkidayo',
+                youtube: 'https://youtube.com/@wizkid',
+                spotify: 'https://open.spotify.com/artist/3tVQdUvClmAT7URs9V3rsp'
+            }
+        },
+        {
+            id: 3,
+            slug: 'davido',
+            name: 'Davido',
+            genre: 'Afrobeats, Pop',
+            bio: 'Award-winning artist with global hit records',
+            image: '/artists/davido.jpg',
+            albumCount: 4,
+            social: {
+                instagram: 'https://instagram.com/davido',
+                twitter: 'https://twitter.com/davido',
+                youtube: 'https://youtube.com/@davido',
+                spotify: 'https://open.spotify.com/artist/0Y3agQaa6g2r0YmHPOO9rh'
+            }
+        },
+        {
+            id: 4,
+            slug: 'multirod',
             name: 'Multirod',
             genre: 'Afrobeats',
             bio: 'Rising star in the Nigerian music scene',
@@ -19,7 +65,8 @@ export default function ArtistsPage() {
             }
         },
         {
-            id: 2,
+            id: 5,
+            slug: 'killa-vybz',
             name: 'Killa Vybz',
             genre: 'Hip Hop',
             bio: 'Bringing authentic Nigerian hip hop to the world',
@@ -33,7 +80,8 @@ export default function ArtistsPage() {
             }
         },
         {
-            id: 3,
+            id: 6,
+            slug: 'kirko-drillz',
             name: 'Kirko Drillz',
             genre: 'Drill',
             bio: 'Pioneer of Nigerian drill music',
@@ -45,48 +93,6 @@ export default function ArtistsPage() {
                 youtube: 'https://youtube.com/@kirkodrillz',
                 spotify: 'https://open.spotify.com/artist/kirkodrillz'
             }
-        },
-        {
-            id: 4,
-            name: 'SupaBrainBeats',
-            genre: 'Producer',
-            bio: 'Award-winning producer and beatmaker',
-            image: '/artists/supabrainbeats.jpg',
-            albumCount: 5,
-            social: {
-                instagram: 'https://instagram.com/supabrainbeats',
-                twitter: 'https://twitter.com/supabrainbeats',
-                youtube: 'https://youtube.com/@supabrainbeats',
-                spotify: 'https://open.spotify.com/artist/supabrainbeats'
-            }
-        },
-        {
-            id: 5,
-            name: 'Bella Alubo',
-            genre: 'R&B',
-            bio: 'Soulful voice with contemporary African sound',
-            image: '/artists/bellaalubo.jpg',
-            albumCount: 2,
-            social: {
-                instagram: 'https://instagram.com/bellaalubo',
-                twitter: 'https://twitter.com/bellaalubo',
-                youtube: 'https://youtube.com/@bellaalubo',
-                spotify: 'https://open.spotify.com/artist/bellaalubo'
-            }
-        },
-        {
-            id: 6,
-            name: 'DJ Neptune',
-            genre: 'DJ/Producer',
-            bio: 'International DJ and music producer',
-            image: '/artists/djneptune.jpg',
-            albumCount: 3,
-            social: {
-                instagram: 'https://instagram.com/djneptune',
-                twitter: 'https://twitter.com/djneptune',
-                youtube: 'https://youtube.com/@djneptune',
-                spotify: 'https://open.spotify.com/artist/djneptune'
-            }
         }
     ];
 
@@ -96,7 +102,7 @@ export default function ArtistsPage() {
             <PageHeader
                 title="Our Artists"
                 subtitle="Meet the voices shaping contemporary African music"
-                backgroundImage="/images/artists-header.jpg"
+                backgroundVideo="https://res.cloudinary.com/dqwfjxn8g/video/upload/q_auto/f_auto/v1776634243/0_Audio_Sound_1280x720_sps4wp.mp4"
             />
 
             {/* Artists Grid Section */}
@@ -118,7 +124,7 @@ export default function ArtistsPage() {
                                     {/* Hover Overlay */}
                                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                                         <Link
-                                            href={`/artists/${artist.id}`}
+                                            href={`/artists/${artist.slug}`}
                                             className="bg-[#8B9D7F] hover:bg-[#7a8c6f] text-white px-6 py-3 rounded-lg font-semibold transition-colors"
                                         >
                                             View Profile
