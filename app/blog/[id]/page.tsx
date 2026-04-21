@@ -3,6 +3,8 @@ import { Calendar, User, ArrowLeft, Share2 } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { getPostById, getLatestPosts } from '@/lib/data/blog';
 
+export const runtime = 'edge';
+
 // TODO: When backend is ready, replace getPostById with an API/DB call
 export default async function BlogPostPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;

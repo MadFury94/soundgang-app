@@ -43,7 +43,7 @@ export const releases: Release[] = [
         artistSlug: 'soundgang',
         releaseDate: 'December 2024',
         type: 'Album',
-        coverImage: '/releases/solid-4-life.jpg',
+        coverImage: 'https://res.cloudinary.com/dqwfjxn8g/image/upload/v1776779214/2150639068_nikmvw.jpg',
         gradient: 'from-cyan-500 via-blue-500 to-purple-500',
         trackCount: 12,
         tracks: [

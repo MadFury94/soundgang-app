@@ -36,7 +36,7 @@ export const events: Event[] = [
         isoDate: '2024-12-15',
         time: '8:00 PM',
         ticketUrl: '/contact',
-        coverImage: '/events/multilord-eko-hotel.jpg',
+        coverImage: 'https://res.cloudinary.com/dqwfjxn8g/image/upload/v1776779219/2149052674_bvo9sa.jpg',
         gradient: 'from-orange-600 via-red-500 to-pink-600',
         featured: true,
         description: 'An unforgettable night with Multilord performing his biggest hits live.',
