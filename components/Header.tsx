@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 
 export default function Header() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const pathname = usePathname();
+    const router = useRouter();
 
     const navLinks = [
         { href: '/', label: 'Home' },
@@ -24,6 +25,14 @@ export default function Header() {
             return pathname === '/';
         }
         return pathname.startsWith(href);
+    };
+
+    const handleMobileNavClick = (href: string) => {
+        setMobileMenuOpen(false);
+        // Wait for the menu close animation before navigating
+        setTimeout(() => {
+            router.push(href);
+        }, 150);
     };
 
     return (
@@ -68,40 +77,74 @@ export default function Header() {
 
                     {/* Mobile Menu Button */}
                     <button
-                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        onClick={() => setMobileMenuOpen(true)}
                         className="lg:hidden p-2 text-white hover:text-[#8B9D7F] transition-colors z-50"
-                        aria-label="Toggle menu"
+                        aria-label="Open menu"
                     >
-                        {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                        <Menu className="w-6 h-6" />
                     </button>
                 </div>
             </div>
 
-            {/* Mobile Menu */}
-            {mobileMenuOpen && (
-                <div className="lg:hidden fixed inset-0 top-28 bg-gray-900/98 backdrop-blur-md z-40">
-                    <nav className="flex flex-col items-center justify-center h-full gap-8 px-4">
+            {/* Mobile Menu Overlay */}
+            <div
+                className={`lg:hidden fixed inset-0 z-40 transition-all duration-300 ${mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+            >
+                {/* Backdrop */}
+                <div
+                    className="absolute inset-0 bg-gray-950"
+                    onClick={() => setMobileMenuOpen(false)}
+                />
+
+                {/* Slide-in panel from right */}
+                <div
+                    className={`absolute top-0 right-0 h-full w-72 bg-gray-900 border-l border-gray-800 shadow-2xl flex flex-col transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
+                >
+                    {/* Panel header */}
+                    <div className="flex items-center justify-between px-6 py-5 border-b border-gray-800">
+                        <Image
+                            src="/soundgang-logo.png"
+                            alt="SoundGang Logo"
+                            width={60}
+                            height={60}
+                            className="w-12 h-12 object-contain"
+                        />
+                        <button
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-800"
+                            aria-label="Close menu"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    {/* Nav links */}
+                    <nav className="flex flex-col px-4 py-6 gap-1 flex-1">
                         {navLinks.map((link) => (
-                            <Link
+                            <button
                                 key={link.href}
-                                href={link.href}
-                                onClick={() => setMobileMenuOpen(false)}
-                                className={`text-2xl font-semibold transition-colors ${isActive(link.href) ? 'text-[#8B9D7F]' : 'hover:text-[#8B9D7F]'
+                                onClick={() => handleMobileNavClick(link.href)}
+                                className={`text-left text-base font-medium px-4 py-3 rounded-lg transition-colors ${isActive(link.href)
+                                    ? 'text-[#8B9D7F] bg-[#8B9D7F]/10'
+                                    : 'text-gray-300 hover:text-white hover:bg-gray-800'
                                     }`}
                             >
                                 {link.label}
-                            </Link>
+                            </button>
                         ))}
-                        <Link
-                            href="/submit"
-                            onClick={() => setMobileMenuOpen(false)}
-                            className="bg-[#8B9D7F] hover:bg-[#7a8c6f] text-white font-semibold text-lg px-8 py-4 rounded-lg transition-colors mt-4"
+                    </nav>
+
+                    {/* CTA at bottom */}
+                    <div className="px-4 pb-8">
+                        <button
+                            onClick={() => handleMobileNavClick('/submit')}
+                            className="block w-full text-center bg-[#8B9D7F] hover:bg-[#7a8c6f] text-white font-semibold text-sm px-6 py-3.5 rounded-lg transition-colors"
                         >
                             SUBMIT MUSIC
-                        </Link>
-                    </nav>
+                        </button>
+                    </div>
                 </div>
-            )}
+            </div>
         </header>
     );
 }

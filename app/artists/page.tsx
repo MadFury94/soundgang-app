@@ -121,8 +121,8 @@ export default function ArtistsPage() {
                                         <span className="text-8xl opacity-20">🎤</span>
                                     </div>
 
-                                    {/* Hover Overlay */}
-                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                    {/* Overlay - visible on hover (desktop) and always on mobile */}
+                                    <div className="absolute inset-0 bg-black/60 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                                         <Link
                                             href={`/artists/${artist.slug}`}
                                             className="bg-[#8B9D7F] hover:bg-[#7a8c6f] text-white px-6 py-3 rounded-lg font-semibold transition-colors"

@@ -11,7 +11,7 @@ export default function UpcomingShowsSection() {
             location: 'Lagos, Nigeria',
             date: 'Dec 15, 2024',
             time: '8:00 PM',
-            ticketUrl: '#'
+            ticketUrl: '/contact'
         },
         {
             id: 2,
@@ -20,7 +20,7 @@ export default function UpcomingShowsSection() {
             location: 'Lagos, Nigeria',
             date: 'Dec 22, 2024',
             time: '7:00 PM',
-            ticketUrl: '#'
+            ticketUrl: '/contact'
         },
         {
             id: 3,
@@ -29,7 +29,7 @@ export default function UpcomingShowsSection() {
             location: 'Lagos, Nigeria',
             date: 'Dec 31, 2024',
             time: '9:00 PM',
-            ticketUrl: '#'
+            ticketUrl: '/contact'
         }
     ];
 

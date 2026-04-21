@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { Calendar, User, ArrowLeft, Share2 } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
+export const runtime = 'edge';
+
 // Mock blog data - in production, fetch from database/CMS
 const blogPosts = {
     '1': {
