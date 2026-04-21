@@ -1,12 +1,10 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import WaveDivider from './WaveDivider';
-import { getFeaturedArtists } from '@/lib/data/artists';
+import { getFeaturedArtists } from '@/lib/api';
 
-// TODO: When backend is ready, make this async and fetch from API
-export default function FeaturedArtistsSection() {
-    // TODO: Replace with — const artists = await getFeaturedArtists() (API call)
-    const artists = getFeaturedArtists();
+export default async function FeaturedArtistsSection() {
+    const artists = await getFeaturedArtists();
 
     return (
         <section className="bg-black text-white">

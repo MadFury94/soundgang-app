@@ -3,12 +3,9 @@
 import { useState } from 'react';
 import { Play } from 'lucide-react';
 import WaveDivider from './WaveDivider';
-import { getAllVideos, type Video } from '@/lib/data/videos';
+import type { Video } from '@/lib/data/videos';
 
-// TODO: When backend is ready, fetch videos from API and pass as prop
-export default function VideosGallerySection() {
-    // TODO: Replace with — const videos = await getAllVideos() (API call)
-    const videos = getAllVideos();
+export default function VideosGallerySection({ videos }: { videos: Video[] }) {
     const [selectedVideo, setSelectedVideo] = useState<Video>(videos[0]);
 
     return (
@@ -31,8 +28,8 @@ export default function VideosGallerySection() {
                                         key={video.id}
                                         onClick={() => setSelectedVideo(video)}
                                         className={`w-full text-left p-4 rounded-lg border transition-all ${selectedVideo.id === video.id
-                                                ? 'bg-[#8B9D7F]/10 border-[#8B9D7F]'
-                                                : 'bg-[#1a1a1a] border-gray-800 hover:border-[#8B9D7F]'
+                                            ? 'bg-[#8B9D7F]/10 border-[#8B9D7F]'
+                                            : 'bg-[#1a1a1a] border-gray-800 hover:border-[#8B9D7F]'
                                             }`}
                                     >
                                         <div className="flex items-start gap-3">

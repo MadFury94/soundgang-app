@@ -62,7 +62,7 @@ export const releases: Release[] = [
         artistSlug: 'multilord',
         releaseDate: 'November 2024',
         type: 'Single',
-        coverImage: '/releases/mbaf.jpg',
+        coverImage: 'https://res.cloudinary.com/dqwfjxn8g/image/upload/v1776780165/2148634050_tm5sja.jpg',
         gradient: 'from-gray-400 via-orange-400 to-red-400',
         trackCount: 1,
         tracks: [
@@ -80,7 +80,7 @@ export const releases: Release[] = [
         artistSlug: 'multilord',
         releaseDate: 'October 2024',
         type: 'EP',
-        coverImage: '/releases/polaris-bro.jpg',
+        coverImage: 'https://res.cloudinary.com/dqwfjxn8g/image/upload/v1776780806/2018_qw3dsy.jpg',
         gradient: 'from-purple-600 via-pink-500 to-red-500',
         trackCount: 5,
         tracks: [

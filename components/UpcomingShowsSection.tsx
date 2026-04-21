@@ -1,12 +1,10 @@
 import Link from 'next/link';
 import { Calendar, MapPin, ArrowRight } from 'lucide-react';
 import WaveDivider from './WaveDivider';
-import { getUpcomingEvents } from '@/lib/data/events';
+import { getUpcomingEvents } from '@/lib/api';
 
-// TODO: When backend is ready, make this async and fetch from API
-export default function UpcomingShowsSection() {
-    // TODO: Replace with — const shows = await getUpcomingEvents() (API call)
-    const shows = getUpcomingEvents();
+export default async function UpcomingShowsSection() {
+    const shows = await getUpcomingEvents();
 
     return (
         <section className="bg-black text-white">

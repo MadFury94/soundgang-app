@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Cloudflare Worker (api subfolder)
+/api/node_modules/
+/api/.wrangler/
+/api/dist/
+
+# Kiro spec files (local dev tooling, not needed in deployment)
+.kiro/

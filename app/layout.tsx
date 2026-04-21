@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import NewsletterSection from "@/components/NewsletterSection";
 import UpcomingShowsSection from "@/components/UpcomingShowsSection";
-import VideosGallerySection from "@/components/VideosGallerySection";
+import VideosGallerySectionWrapper from "@/components/VideosGallerySectionWrapper";
 import { PlayerProvider } from "@/lib/player-context";
 import MusicPlayer from "@/components/player/MusicPlayer";
 
@@ -34,7 +34,7 @@ export default function RootLayout({
         <PlayerProvider>
           <Header />
           <main className="flex-1 pb-24">{children}</main>
-          <VideosGallerySection />
+          <VideosGallerySectionWrapper />
           <UpcomingShowsSection />
           <NewsletterSection />
           <Footer />

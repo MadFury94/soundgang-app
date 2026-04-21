@@ -1,4 +1,4 @@
-import HeroSlider from '@/components/HeroSlider';
+import HeroSliderWrapper from '@/components/HeroSliderWrapper';
 import FeaturedArtistsSection from '@/components/FeaturedArtistsSection';
 import LatestReleasesSection from '@/components/LatestReleasesSection';
 import StreamingPlatformsSection from '@/components/StreamingPlatformsSection';
@@ -6,7 +6,7 @@ import StreamingPlatformsSection from '@/components/StreamingPlatformsSection';
 export default function Home() {
   return (
     <div className="min-h-screen">
-      <HeroSlider />
+      <HeroSliderWrapper />
       <FeaturedArtistsSection />
       <LatestReleasesSection />
       <StreamingPlatformsSection />

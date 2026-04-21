@@ -38,7 +38,7 @@ export const blogPosts: BlogPost[] = [
         date: 'December 15, 2024',
         isoDate: '2024-12-15',
         category: 'Industry News',
-        coverImage: '/blog/afrobeats-rise.jpg',
+        coverImage: 'https://res.cloudinary.com/dqwfjxn8g/image/upload/v1776779210/2151027909_g6su84.jpg',
         gradient: 'from-purple-600 via-pink-500 to-orange-500',
         featured: true,
         content: `<p>Afrobeats has evolved from a regional sound to a global phenomenon, captivating audiences worldwide with its infectious rhythms and vibrant energy.</p>

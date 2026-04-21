@@ -3,90 +3,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { getFeaturedArtists } from '@/lib/data/artists';
-import { getFeaturedReleases } from '@/lib/data/releases';
-import { getFeaturedEvents } from '@/lib/data/events';
-import { getFeaturedPosts } from '@/lib/data/blog';
-
-// =============================================================================
-// HERO SLIDER
-// Builds slides from the data store — artists, releases, events, blog posts.
-// TODO: When backend is ready, pass slides as a prop fetched server-side.
-// =============================================================================
 
 type SlideCategory = 'ARTIST' | 'RELEASE' | 'EVENT' | 'BLOG';
 
-interface Slide {
+export interface Slide {
     id: string;
     category: SlideCategory;
     heading: string;
     description: string;
     buttonLabel: string;
     buttonHref: string;
-    backgroundImage: string;  // Image URL or path
-    gradient: string;         // Tailwind gradient (shown when no image)
-}
-
-function buildSlides(): Slide[] {
-    const slides: Slide[] = [];
-
-    // Artist slides
-    getFeaturedArtists().forEach((artist) => {
-        slides.push({
-            id: `artist-${artist.slug}`,
-            category: 'ARTIST',
-            heading: artist.name,
-            description: artist.bio,
-            buttonLabel: 'View Profile',
-            buttonHref: `/artists/${artist.slug}`,
-            backgroundImage: artist.coverImage,
-            gradient: artist.gradient,
-        });
-    });
-
-    // Release slides
-    getFeaturedReleases().forEach((release) => {
-        slides.push({
-            id: `release-${release.slug}`,
-            category: 'RELEASE',
-            heading: release.title,
-            description: release.description ?? `${release.type} by ${release.artist} — ${release.releaseDate}`,
-            buttonLabel: 'Stream Now',
-            buttonHref: `/releases/${release.slug}`,
-            backgroundImage: release.coverImage,
-            gradient: release.gradient,
-        });
-    });
-
-    // Event slides
-    getFeaturedEvents().forEach((event) => {
-        slides.push({
-            id: `event-${event.slug}`,
-            category: 'EVENT',
-            heading: event.title,
-            description: `${event.date} • ${event.time} at ${event.venue}, ${event.location}`,
-            buttonLabel: 'Get Tickets',
-            buttonHref: event.ticketUrl,
-            backgroundImage: event.coverImage,
-            gradient: event.gradient,
-        });
-    });
-
-    // Blog slides
-    getFeaturedPosts().forEach((post) => {
-        slides.push({
-            id: `blog-${post.slug}`,
-            category: 'BLOG',
-            heading: post.title,
-            description: post.excerpt,
-            buttonLabel: 'Read Article',
-            buttonHref: `/blog/${post.id}`,
-            backgroundImage: post.coverImage,
-            gradient: post.gradient,
-        });
-    });
-
-    return slides;
+    backgroundImage: string;
+    gradient: string;
 }
 
 const CATEGORY_COLORS: Record<SlideCategory, string> = {
@@ -98,8 +26,7 @@ const CATEGORY_COLORS: Record<SlideCategory, string> = {
 
 const AUTO_ADVANCE_MS = 6000;
 
-export default function HeroSlider() {
-    const slides = buildSlides();
+export default function HeroSlider({ slides }: { slides: Slide[] }) {
     const [current, setCurrent] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
 
