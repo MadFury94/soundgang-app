@@ -257,9 +257,324 @@ export default {
                 return json({ url: publicUrl, key: imageKey }, 201, origin);
             }
 
-            // ── Health check ────────────────────────────────────────────────────────
+            // ── GET /api/health ─────────────────────────────────────────────────────
             if (path === '/api/health') {
-                return json({ status: 'ok', timestamp: new Date().toISOString() }, 200, origin);
+                const auth = request.headers.get('Authorization');
+                if (!auth) {
+                    return json({ status: 'ok', admin: false }, 200, origin);
+                }
+                if (!env.ADMIN_SECRET || auth !== `Bearer ${env.ADMIN_SECRET}`) {
+                    return error('Unauthorized', 401, origin);
+                }
+                return json({ status: 'ok', admin: true }, 200, origin);
+            }
+
+            // ── POST /api/artists ────────────────────────────────────────────────────
+            if (request.method === 'POST' && path === '/api/artists') {
+                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const body = await request.json() as Record<string, unknown>;
+                if (!body.name || !body.slug) return error('name and slug are required', 400, origin);
+                try {
+                    const result = await env.DB.prepare(
+                        `INSERT INTO artists (slug, name, genre, bio, short_bio, location, image_url, cover_url, gradient, featured,
+                         stat_albums, stat_singles, stat_awards, stat_followers,
+                         social_instagram, social_twitter, social_youtube, social_spotify)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                    ).bind(
+                        body.slug, body.name, body.genre ?? '', body.bio ?? '', body.short_bio ?? '',
+                        body.location ?? 'Lagos, Nigeria', body.image_url ?? '', body.cover_url ?? '',
+                        body.gradient ?? 'from-gray-700 via-gray-800 to-black', body.featured ? 1 : 0,
+                        body.stat_albums ?? 0, body.stat_singles ?? 0, body.stat_awards ?? 0, body.stat_followers ?? '0',
+                        body.social_instagram ?? '', body.social_twitter ?? '', body.social_youtube ?? '', body.social_spotify ?? ''
+                    ).run();
+                    const created = await env.DB.prepare('SELECT * FROM artists WHERE id = ?').bind(result.meta.last_row_id).first();
+                    return json(formatArtist(created as Record<string, unknown>), 201, origin);
+                } catch (e: unknown) {
+                    if (e instanceof Error && e.message.includes('UNIQUE')) return error('Slug already exists', 409, origin);
+                    throw e;
+                }
+            }
+
+            // ── PUT /api/artists/:id ─────────────────────────────────────────────────
+            const artistIdMatch = path.match(/^\/api\/artists\/(\d+)$/);
+            if (request.method === 'PUT' && artistIdMatch) {
+                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const id = artistIdMatch[1];
+                const body = await request.json() as Record<string, unknown>;
+                await env.DB.prepare(
+                    `UPDATE artists SET slug=?, name=?, genre=?, bio=?, short_bio=?, location=?, image_url=?, cover_url=?,
+                     gradient=?, featured=?, stat_albums=?, stat_singles=?, stat_awards=?, stat_followers=?,
+                     social_instagram=?, social_twitter=?, social_youtube=?, social_spotify=?, updated_at=datetime('now')
+                     WHERE id=?`
+                ).bind(
+                    body.slug, body.name, body.genre ?? '', body.bio ?? '', body.short_bio ?? '',
+                    body.location ?? 'Lagos, Nigeria', body.image_url ?? '', body.cover_url ?? '',
+                    body.gradient ?? 'from-gray-700 via-gray-800 to-black', body.featured ? 1 : 0,
+                    body.stat_albums ?? 0, body.stat_singles ?? 0, body.stat_awards ?? 0, body.stat_followers ?? '0',
+                    body.social_instagram ?? '', body.social_twitter ?? '', body.social_youtube ?? '', body.social_spotify ?? '',
+                    id
+                ).run();
+                const updated = await env.DB.prepare('SELECT * FROM artists WHERE id = ?').bind(id).first();
+                if (!updated) return error('Artist not found', 404, origin);
+                return json(formatArtist(updated as Record<string, unknown>), 200, origin);
+            }
+
+            // ── DELETE /api/artists/:id ──────────────────────────────────────────────
+            if (request.method === 'DELETE' && artistIdMatch) {
+                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const id = artistIdMatch[1];
+                await env.DB.prepare('DELETE FROM artists WHERE id = ?').bind(id).run();
+                return json({ success: true }, 200, origin);
+            }
+
+            // ── POST /api/releases ───────────────────────────────────────────────────
+            if (request.method === 'POST' && path === '/api/releases') {
+                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const body = await request.json() as Record<string, unknown>;
+                if (!body.title || !body.slug) return error('title and slug are required', 400, origin);
+                const tracks = (body.tracks as Record<string, unknown>[]) ?? [];
+                try {
+                    const result = await env.DB.prepare(
+                        `INSERT INTO releases (slug, title, artist, artist_slug, release_date, type, cover_url, gradient,
+                         track_count, stream_url, spotify_url, apple_url, featured, description)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                    ).bind(
+                        body.slug, body.title, body.artist ?? '', body.artist_slug ?? '',
+                        body.release_date ?? '', body.type ?? 'Single', body.cover_url ?? '',
+                        body.gradient ?? 'from-gray-700 via-gray-800 to-black',
+                        tracks.length || 1, body.stream_url ?? '', body.spotify_url ?? '',
+                        body.apple_url ?? '', body.featured ? 1 : 0, body.description ?? ''
+                    ).run();
+                    const releaseId = result.meta.last_row_id;
+                    for (let i = 0; i < tracks.length; i++) {
+                        const t = tracks[i];
+                        await env.DB.prepare(
+                            `INSERT INTO tracks (release_id, title, duration, audio_url, featuring, track_number)
+                             VALUES (?, ?, ?, ?, ?, ?)`
+                        ).bind(releaseId, t.title ?? '', t.duration ?? '0:00', t.audio_url ?? '', t.featuring ?? '', t.track_number ?? i + 1).run();
+                    }
+                    const created = await env.DB.prepare('SELECT * FROM releases WHERE id = ?').bind(releaseId).first();
+                    const { results: createdTracks } = await env.DB.prepare('SELECT * FROM tracks WHERE release_id = ? ORDER BY track_number ASC').bind(releaseId).all();
+                    return json({ ...formatRelease(created as Record<string, unknown>), tracks: createdTracks.map(formatTrack) }, 201, origin);
+                } catch (e: unknown) {
+                    if (e instanceof Error && e.message.includes('UNIQUE')) return error('Slug already exists', 409, origin);
+                    throw e;
+                }
+            }
+
+            // ── PUT /api/releases/:id ────────────────────────────────────────────────
+            const releaseIdMatch = path.match(/^\/api\/releases\/(\d+)$/);
+            if (request.method === 'PUT' && releaseIdMatch) {
+                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const id = releaseIdMatch[1];
+                const body = await request.json() as Record<string, unknown>;
+                const tracks = (body.tracks as Record<string, unknown>[]) ?? [];
+                await env.DB.prepare(
+                    `UPDATE releases SET slug=?, title=?, artist=?, artist_slug=?, release_date=?, type=?, cover_url=?,
+                     gradient=?, track_count=?, stream_url=?, spotify_url=?, apple_url=?, featured=?, description=?, updated_at=datetime('now')
+                     WHERE id=?`
+                ).bind(
+                    body.slug, body.title, body.artist ?? '', body.artist_slug ?? '',
+                    body.release_date ?? '', body.type ?? 'Single', body.cover_url ?? '',
+                    body.gradient ?? 'from-gray-700 via-gray-800 to-black',
+                    tracks.length || 1, body.stream_url ?? '', body.spotify_url ?? '',
+                    body.apple_url ?? '', body.featured ? 1 : 0, body.description ?? '', id
+                ).run();
+                // Upsert tracks: delete existing, re-insert
+                await env.DB.prepare('DELETE FROM tracks WHERE release_id = ?').bind(id).run();
+                for (let i = 0; i < tracks.length; i++) {
+                    const t = tracks[i];
+                    await env.DB.prepare(
+                        `INSERT INTO tracks (release_id, title, duration, audio_url, featuring, track_number)
+                         VALUES (?, ?, ?, ?, ?, ?)`
+                    ).bind(id, t.title ?? '', t.duration ?? '0:00', t.audio_url ?? '', t.featuring ?? '', t.track_number ?? i + 1).run();
+                }
+                const updated = await env.DB.prepare('SELECT * FROM releases WHERE id = ?').bind(id).first();
+                if (!updated) return error('Release not found', 404, origin);
+                const { results: updatedTracks } = await env.DB.prepare('SELECT * FROM tracks WHERE release_id = ? ORDER BY track_number ASC').bind(id).all();
+                return json({ ...formatRelease(updated as Record<string, unknown>), tracks: updatedTracks.map(formatTrack) }, 200, origin);
+            }
+
+            // ── DELETE /api/releases/:id ─────────────────────────────────────────────
+            if (request.method === 'DELETE' && releaseIdMatch) {
+                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const id = releaseIdMatch[1];
+                await env.DB.prepare('DELETE FROM releases WHERE id = ?').bind(id).run();
+                return json({ success: true }, 200, origin);
+            }
+
+            // ── POST /api/tracks ─────────────────────────────────────────────────────
+            if (request.method === 'POST' && path === '/api/tracks') {
+                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const body = await request.json() as Record<string, unknown>;
+                if (!body.release_id || !body.title) return error('release_id and title are required', 400, origin);
+                const result = await env.DB.prepare(
+                    `INSERT INTO tracks (release_id, title, duration, audio_url, featuring, track_number)
+                     VALUES (?, ?, ?, ?, ?, ?)`
+                ).bind(body.release_id, body.title, body.duration ?? '0:00', body.audio_url ?? '', body.featuring ?? '', body.track_number ?? 1).run();
+                const created = await env.DB.prepare('SELECT * FROM tracks WHERE id = ?').bind(result.meta.last_row_id).first();
+                return json(formatTrack(created as Record<string, unknown>), 201, origin);
+            }
+
+            // ── PUT /api/tracks/:id ──────────────────────────────────────────────────
+            const trackIdMatch = path.match(/^\/api\/tracks\/(\d+)$/);
+            if (request.method === 'PUT' && trackIdMatch) {
+                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const id = trackIdMatch[1];
+                const body = await request.json() as Record<string, unknown>;
+                await env.DB.prepare(
+                    `UPDATE tracks SET title=?, duration=?, audio_url=?, featuring=?, track_number=? WHERE id=?`
+                ).bind(body.title, body.duration ?? '0:00', body.audio_url ?? '', body.featuring ?? '', body.track_number ?? 1, id).run();
+                const updated = await env.DB.prepare('SELECT * FROM tracks WHERE id = ?').bind(id).first();
+                if (!updated) return error('Track not found', 404, origin);
+                return json(formatTrack(updated as Record<string, unknown>), 200, origin);
+            }
+
+            // ── DELETE /api/tracks/:id ───────────────────────────────────────────────
+            if (request.method === 'DELETE' && trackIdMatch) {
+                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const id = trackIdMatch[1];
+                await env.DB.prepare('DELETE FROM tracks WHERE id = ?').bind(id).run();
+                return json({ success: true }, 200, origin);
+            }
+
+            // ── POST /api/events ─────────────────────────────────────────────────────
+            if (request.method === 'POST' && path === '/api/events') {
+                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const body = await request.json() as Record<string, unknown>;
+                if (!body.title || !body.slug) return error('title and slug are required', 400, origin);
+                try {
+                    const result = await env.DB.prepare(
+                        `INSERT INTO events (slug, title, artist, artist_slug, venue, location, event_date, iso_date, event_time, ticket_url, cover_url, gradient, featured, description)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                    ).bind(
+                        body.slug, body.title, body.artist ?? '', body.artist_slug ?? '',
+                        body.venue ?? '', body.location ?? '', body.event_date ?? '', body.iso_date ?? '',
+                        body.event_time ?? '', body.ticket_url ?? '/contact', body.cover_url ?? '',
+                        body.gradient ?? 'from-gray-700 via-gray-800 to-black', body.featured ? 1 : 0, body.description ?? ''
+                    ).run();
+                    const created = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(result.meta.last_row_id).first();
+                    return json(formatEvent(created as Record<string, unknown>), 201, origin);
+                } catch (e: unknown) {
+                    if (e instanceof Error && e.message.includes('UNIQUE')) return error('Slug already exists', 409, origin);
+                    throw e;
+                }
+            }
+
+            // ── PUT /api/events/:id ──────────────────────────────────────────────────
+            const eventIdMatch = path.match(/^\/api\/events\/(\d+)$/);
+            if (request.method === 'PUT' && eventIdMatch) {
+                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const id = eventIdMatch[1];
+                const body = await request.json() as Record<string, unknown>;
+                await env.DB.prepare(
+                    `UPDATE events SET slug=?, title=?, artist=?, artist_slug=?, venue=?, location=?, event_date=?, iso_date=?,
+                     event_time=?, ticket_url=?, cover_url=?, gradient=?, featured=?, description=?, updated_at=datetime('now')
+                     WHERE id=?`
+                ).bind(
+                    body.slug, body.title, body.artist ?? '', body.artist_slug ?? '',
+                    body.venue ?? '', body.location ?? '', body.event_date ?? '', body.iso_date ?? '',
+                    body.event_time ?? '', body.ticket_url ?? '/contact', body.cover_url ?? '',
+                    body.gradient ?? 'from-gray-700 via-gray-800 to-black', body.featured ? 1 : 0, body.description ?? '', id
+                ).run();
+                const updated = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(id).first();
+                if (!updated) return error('Event not found', 404, origin);
+                return json(formatEvent(updated as Record<string, unknown>), 200, origin);
+            }
+
+            // ── DELETE /api/events/:id ───────────────────────────────────────────────
+            if (request.method === 'DELETE' && eventIdMatch) {
+                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const id = eventIdMatch[1];
+                await env.DB.prepare('DELETE FROM events WHERE id = ?').bind(id).run();
+                return json({ success: true }, 200, origin);
+            }
+
+            // ── POST /api/blog ───────────────────────────────────────────────────────
+            if (request.method === 'POST' && path === '/api/blog') {
+                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const body = await request.json() as Record<string, unknown>;
+                if (!body.title || !body.slug) return error('title and slug are required', 400, origin);
+                try {
+                    const result = await env.DB.prepare(
+                        `INSERT INTO blog_posts (slug, title, excerpt, content, author, category, cover_url, gradient, featured, published, published_at)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                    ).bind(
+                        body.slug, body.title, body.excerpt ?? '', body.content ?? '',
+                        body.author ?? 'SoundGang', body.category ?? 'News', body.cover_url ?? '',
+                        body.gradient ?? 'from-gray-700 via-gray-800 to-black',
+                        body.featured ? 1 : 0, body.published !== false ? 1 : 0,
+                        body.published_at ?? new Date().toISOString()
+                    ).run();
+                    const created = await env.DB.prepare('SELECT * FROM blog_posts WHERE id = ?').bind(result.meta.last_row_id).first();
+                    return json(formatPost(created as Record<string, unknown>), 201, origin);
+                } catch (e: unknown) {
+                    if (e instanceof Error && e.message.includes('UNIQUE')) return error('Slug already exists', 409, origin);
+                    throw e;
+                }
+            }
+
+            // ── PUT /api/blog/:id ────────────────────────────────────────────────────
+            const blogIdMatch = path.match(/^\/api\/blog\/(\d+)$/);
+            if (request.method === 'PUT' && blogIdMatch) {
+                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const id = blogIdMatch[1];
+                const body = await request.json() as Record<string, unknown>;
+                await env.DB.prepare(
+                    `UPDATE blog_posts SET slug=?, title=?, excerpt=?, content=?, author=?, category=?, cover_url=?,
+                     gradient=?, featured=?, published=?, updated_at=datetime('now') WHERE id=?`
+                ).bind(
+                    body.slug, body.title, body.excerpt ?? '', body.content ?? '',
+                    body.author ?? 'SoundGang', body.category ?? 'News', body.cover_url ?? '',
+                    body.gradient ?? 'from-gray-700 via-gray-800 to-black',
+                    body.featured ? 1 : 0, body.published !== false ? 1 : 0, id
+                ).run();
+                const updated = await env.DB.prepare('SELECT * FROM blog_posts WHERE id = ?').bind(id).first();
+                if (!updated) return error('Post not found', 404, origin);
+                return json(formatPost(updated as Record<string, unknown>), 200, origin);
+            }
+
+            // ── DELETE /api/blog/:id ─────────────────────────────────────────────────
+            if (request.method === 'DELETE' && blogIdMatch) {
+                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const id = blogIdMatch[1];
+                await env.DB.prepare('DELETE FROM blog_posts WHERE id = ?').bind(id).run();
+                return json({ success: true }, 200, origin);
+            }
+
+            // ── POST /api/videos ─────────────────────────────────────────────────────
+            if (request.method === 'POST' && path === '/api/videos') {
+                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const body = await request.json() as Record<string, unknown>;
+                if (!body.title) return error('title is required', 400, origin);
+                const result = await env.DB.prepare(
+                    `INSERT INTO videos (title, artist, artist_slug, youtube_id, thumbnail, video_date)
+                     VALUES (?, ?, ?, ?, ?, ?)`
+                ).bind(body.title, body.artist ?? '', body.artist_slug ?? '', body.youtube_id ?? '', body.thumbnail ?? '', body.video_date ?? '').run();
+                const created = await env.DB.prepare('SELECT * FROM videos WHERE id = ?').bind(result.meta.last_row_id).first();
+                return json(formatVideo(created as Record<string, unknown>), 201, origin);
+            }
+
+            // ── PUT /api/videos/:id ──────────────────────────────────────────────────
+            const videoIdMatch = path.match(/^\/api\/videos\/(\d+)$/);
+            if (request.method === 'PUT' && videoIdMatch) {
+                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const id = videoIdMatch[1];
+                const body = await request.json() as Record<string, unknown>;
+                await env.DB.prepare(
+                    `UPDATE videos SET title=?, artist=?, artist_slug=?, youtube_id=?, thumbnail=?, video_date=? WHERE id=?`
+                ).bind(body.title, body.artist ?? '', body.artist_slug ?? '', body.youtube_id ?? '', body.thumbnail ?? '', body.video_date ?? '', id).run();
+                const updated = await env.DB.prepare('SELECT * FROM videos WHERE id = ?').bind(id).first();
+                if (!updated) return error('Video not found', 404, origin);
+                return json(formatVideo(updated as Record<string, unknown>), 200, origin);
+            }
+
+            // ── DELETE /api/videos/:id ───────────────────────────────────────────────
+            if (request.method === 'DELETE' && videoIdMatch) {
+                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const id = videoIdMatch[1];
+                await env.DB.prepare('DELETE FROM videos WHERE id = ?').bind(id).run();
+                return json({ success: true }, 200, origin);
             }
 
             return error('Not found', 404, origin);

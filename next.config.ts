@@ -1,7 +1,22 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  eslint: {
+    // ESLint runs separately in CI — skip during next build to avoid config issues
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    // Type errors in admin-only components shouldn't block production builds
+    ignoreBuildErrors: false,
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
+  },
 };
 
 export default nextConfig;

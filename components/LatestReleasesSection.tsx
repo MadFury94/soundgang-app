@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Play, Pause, Music } from 'lucide-react';
 import WaveDivider from './WaveDivider';
@@ -12,22 +12,26 @@ import { usePlayer } from '@/lib/player-context';
 // LATEST RELEASES SECTION
 // Two-panel layout: album art on the left, track list on the right.
 // Clicking a track updates the cover art on the left.
-// TODO: When backend is ready, fetch releases from API
 // =============================================================================
 
 export default function LatestReleasesSection() {
     const { play, currentTrack, isPlaying } = usePlayer();
 
-    // TODO: Replace with — const releases = await getLatestReleases(1) (API call)
-    const releases = getLatestReleases(4);
-    const featured = releases[0]; // First release is the featured one
+    const [releases, setReleases] = useState<Release[]>([]);
+    const [activeRelease, setActiveRelease] = useState<Release | null>(null);
+    const [activeTrack, setActiveTrack] = useState<Track | null>(null);
 
-    const [activeRelease, setActiveRelease] = useState<Release>(featured);
-    const [activeTrack, setActiveTrack] = useState<Track | null>(
-        featured?.tracks[0] ?? null
-    );
+    useEffect(() => {
+        getLatestReleases(4).then((data) => {
+            setReleases(data);
+            if (data.length > 0) {
+                setActiveRelease(data[0]);
+                setActiveTrack(data[0].tracks[0] ?? null);
+            }
+        });
+    }, []);
 
-    if (!featured) return null;
+    if (!activeRelease) return null;
 
     const handleTrackClick = (release: Release, track: Track) => {
         setActiveRelease(release);
