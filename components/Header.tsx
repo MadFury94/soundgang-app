@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -8,8 +8,17 @@ import { Menu, X } from 'lucide-react';
 
 export default function Header() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
     const pathname = usePathname();
     const router = useRouter();
+
+    // Become solid once user scrolls past 80px
+    useEffect(() => {
+        const onScroll = () => setScrolled(window.scrollY > 80);
+        onScroll();
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => window.removeEventListener('scroll', onScroll);
+    }, []);
 
     const navLinks = [
         { href: '/', label: 'Home' },
@@ -17,26 +26,26 @@ export default function Header() {
         { href: '/releases', label: 'Releases' },
         { href: '/about', label: 'About' },
         { href: '/blog', label: 'Blog' },
-        { href: '/contact', label: 'Contact' }
+        { href: '/contact', label: 'Contact' },
     ];
 
     const isActive = (href: string) => {
-        if (href === '/') {
-            return pathname === '/';
-        }
+        if (href === '/') return pathname === '/';
         return pathname.startsWith(href);
     };
 
     const handleMobileNavClick = (href: string) => {
         setMobileMenuOpen(false);
-        // Wait for the menu close animation before navigating
-        setTimeout(() => {
-            router.push(href);
-        }, 150);
+        setTimeout(() => router.push(href), 150);
     };
 
     return (
-        <header className="bg-gray-900/95 backdrop-blur-sm text-white border-b border-gray-800 sticky top-0 z-50">
+        <header
+            className={`fixed top-0 left-0 right-0 z-50 text-white transition-all duration-300 ${scrolled
+                    ? 'bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 shadow-lg'
+                    : 'bg-transparent border-b border-transparent'
+                }`}
+        >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-28">
                     {/* Logo */}
@@ -88,7 +97,8 @@ export default function Header() {
 
             {/* Mobile Menu Overlay */}
             <div
-                className={`lg:hidden fixed inset-0 z-40 transition-all duration-300 ${mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                className={`lg:hidden fixed inset-0 z-40 transition-all duration-300 ${mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                    }`}
             >
                 {/* Backdrop */}
                 <div
@@ -98,7 +108,8 @@ export default function Header() {
 
                 {/* Slide-in panel from right */}
                 <div
-                    className={`absolute top-0 right-0 h-full w-72 bg-gray-900 border-l border-gray-800 shadow-2xl flex flex-col transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
+                    className={`absolute top-0 right-0 h-full w-72 bg-gray-900 border-l border-gray-800 shadow-2xl flex flex-col transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+                        }`}
                 >
                     {/* Panel header */}
                     <div className="flex items-center justify-between px-6 py-5 border-b border-gray-800">
@@ -125,8 +136,8 @@ export default function Header() {
                                 key={link.href}
                                 onClick={() => handleMobileNavClick(link.href)}
                                 className={`text-left text-base font-medium px-4 py-3 rounded-lg transition-colors ${isActive(link.href)
-                                    ? 'text-[#8B9D7F] bg-[#8B9D7F]/10'
-                                    : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                                        ? 'text-[#8B9D7F] bg-[#8B9D7F]/10'
+                                        : 'text-gray-300 hover:text-white hover:bg-gray-800'
                                     }`}
                             >
                                 {link.label}

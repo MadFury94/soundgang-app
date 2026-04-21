@@ -6,6 +6,8 @@ import Footer from "@/components/Footer";
 import NewsletterSection from "@/components/NewsletterSection";
 import UpcomingShowsSection from "@/components/UpcomingShowsSection";
 import VideosGallerySection from "@/components/VideosGallerySection";
+import { PlayerProvider } from "@/lib/player-context";
+import MusicPlayer from "@/components/player/MusicPlayer";
 
 const poppins = Poppins({
   weight: ['300', '400', '500', '600', '700'],
@@ -28,13 +30,16 @@ export default function RootLayout({
       lang="en"
       className={`${poppins.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <VideosGallerySection />
-        <UpcomingShowsSection />
-        <NewsletterSection />
-        <Footer />
+      <body className="min-h-full flex flex-col font-sans bg-black text-white">
+        <PlayerProvider>
+          <Header />
+          <main className="flex-1 pb-24">{children}</main>
+          <VideosGallerySection />
+          <UpcomingShowsSection />
+          <NewsletterSection />
+          <Footer />
+          <MusicPlayer />
+        </PlayerProvider>
       </body>
     </html>
   );

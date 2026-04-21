@@ -1,58 +1,48 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import WaveDivider from './WaveDivider';
+import { getFeaturedArtists } from '@/lib/data/artists';
 
+// TODO: When backend is ready, make this async and fetch from API
 export default function FeaturedArtistsSection() {
-    const artists = [
-        {
-            id: 1,
-            name: 'Artist Name',
-            image: '/artists/artist-1.jpg',
-            genre: 'Afrobeats'
-        },
-        {
-            id: 2,
-            name: 'Artist Name',
-            image: '/artists/artist-2.jpg',
-            genre: 'Hip Hop'
-        },
-        {
-            id: 3,
-            name: 'SupaBrainBeats',
-            image: '/artists/artist-3.jpg',
-            genre: 'Producer'
-        }
-    ];
+    // TODO: Replace with — const artists = await getFeaturedArtists() (API call)
+    const artists = getFeaturedArtists();
 
     return (
         <section className="bg-black text-white">
-            {/* Top Wave Divider */}
             <WaveDivider />
 
             <div className="py-20 lg:py-32">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    {/* Section Header */}
                     <div className="mb-16">
                         <h2 className="text-4xl lg:text-5xl font-bold mb-4">Featured Artists</h2>
                         <p className="text-gray-400 text-lg">Meet the voices shaping contemporary African music</p>
                     </div>
 
-                    {/* Artists Grid */}
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
                         {artists.map((artist) => (
                             <Link
                                 key={artist.id}
-                                href={`/artists/${artist.id}`}
+                                href={`/artists/${artist.slug}`}
                                 className="group relative aspect-square rounded-2xl overflow-hidden bg-gray-900"
                             >
-                                {/* Placeholder for artist image */}
-                                <div className="absolute inset-0 bg-gradient-to-br from-purple-600/50 via-pink-600/50 to-blue-600/50">
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <span className="text-6xl opacity-20">🎤</span>
-                                    </div>
+                                {/* Background — image or gradient fallback */}
+                                <div
+                                    className={`absolute inset-0 bg-gradient-to-br ${artist.gradient}`}
+                                    style={
+                                        artist.image
+                                            ? { backgroundImage: `url(${artist.image})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                                            : undefined
+                                    }
+                                >
+                                    {!artist.image && (
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <span className="text-6xl opacity-20">🎤</span>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* Hover Overlay */}
+                                {/* Hover overlay */}
                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                                     <div className="text-center">
                                         <p className="text-sm text-gray-300 mb-2">{artist.genre}</p>
@@ -60,7 +50,7 @@ export default function FeaturedArtistsSection() {
                                     </div>
                                 </div>
 
-                                {/* Artist Name Badge */}
+                                {/* Name badge */}
                                 <div className="absolute bottom-4 left-4 right-4 bg-black/80 backdrop-blur-sm rounded-lg p-4">
                                     <p className="font-semibold text-lg">{artist.name}</p>
                                     <p className="text-sm text-gray-400">{artist.genre}</p>
@@ -69,7 +59,6 @@ export default function FeaturedArtistsSection() {
                         ))}
                     </div>
 
-                    {/* View All Button */}
                     <div className="flex justify-center">
                         <Link
                             href="/artists"
@@ -82,7 +71,6 @@ export default function FeaturedArtistsSection() {
                 </div>
             </div>
 
-            {/* Bottom Wave Divider - Flipped */}
             <div className="rotate-180">
                 <WaveDivider />
             </div>

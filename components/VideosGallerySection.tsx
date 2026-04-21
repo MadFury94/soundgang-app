@@ -3,58 +3,26 @@
 import { useState } from 'react';
 import { Play } from 'lucide-react';
 import WaveDivider from './WaveDivider';
+import { getAllVideos, type Video } from '@/lib/data/videos';
 
+// TODO: When backend is ready, fetch videos from API and pass as prop
 export default function VideosGallerySection() {
-    const videos = [
-        {
-            id: 1,
-            title: 'HONEYMOOD',
-            artist: 'KIRKO DRILLZ',
-            date: 'May 24, 2019',
-            youtubeId: 'dQw4w9WgXcQ', // Replace with actual YouTube video ID
-            thumbnail: '/videos/honeymood.jpg'
-        },
-        {
-            id: 2,
-            title: 'DANGOTE COVER',
-            artist: 'KIRKO DRILLZ',
-            date: 'May 24, 2019',
-            youtubeId: 'dQw4w9WgXcQ', // Replace with actual YouTube video ID
-            thumbnail: '/videos/dangote.jpg'
-        },
-        {
-            id: 3,
-            title: 'BEATBOX FREESTYLE',
-            artist: 'MULTILORD',
-            date: 'May 24, 2019',
-            youtubeId: 'dQw4w9WgXcQ', // Replace with actual YouTube video ID
-            thumbnail: '/videos/beatbox.jpg'
-        },
-        {
-            id: 4,
-            title: '$150K',
-            artist: 'MULTILORD',
-            date: 'May 24, 2019',
-            youtubeId: 'dQw4w9WgXcQ', // Replace with actual YouTube video ID
-            thumbnail: '/videos/150k.jpg'
-        }
-    ];
-
-    const [selectedVideo, setSelectedVideo] = useState(videos[0]);
+    // TODO: Replace with — const videos = await getAllVideos() (API call)
+    const videos = getAllVideos();
+    const [selectedVideo, setSelectedVideo] = useState<Video>(videos[0]);
 
     return (
         <section className="bg-black text-white">
-            {/* Top Wave Divider */}
             <WaveDivider />
 
             <div className="py-20 lg:py-32">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid lg:grid-cols-[350px_1fr] gap-8">
-                        {/* Left Sidebar - Video List */}
+                        {/* Sidebar */}
                         <div>
                             <div className="mb-8">
                                 <h2 className="text-3xl lg:text-4xl font-bold mb-2">VIDEOS</h2>
-                                <div className="h-1 w-20 bg-[#8B9D7F]"></div>
+                                <div className="h-1 w-20 bg-[#8B9D7F]" />
                             </div>
 
                             <div className="space-y-4">
@@ -84,10 +52,9 @@ export default function VideosGallerySection() {
                             </div>
                         </div>
 
-                        {/* Right Side - Video Player */}
+                        {/* Player */}
                         <div>
                             <div className="bg-[#1a1a1a] rounded-2xl overflow-hidden border border-gray-800">
-                                {/* Video Title Bar */}
                                 <div className="bg-black/50 p-4 border-b border-gray-800">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
@@ -100,7 +67,6 @@ export default function VideosGallerySection() {
                                     </div>
                                 </div>
 
-                                {/* YouTube Embed */}
                                 <div className="relative aspect-video bg-black">
                                     <iframe
                                         src={`https://www.youtube.com/embed/${selectedVideo.youtubeId}`}
@@ -112,12 +78,9 @@ export default function VideosGallerySection() {
                                 </div>
                             </div>
 
-                            {/* Video Info */}
                             <div className="mt-6">
                                 <h3 className="text-2xl font-bold mb-2">{selectedVideo.title}</h3>
-                                <p className="text-gray-400">
-                                    {selectedVideo.artist} • {selectedVideo.date}
-                                </p>
+                                <p className="text-gray-400">{selectedVideo.artist} • {selectedVideo.date}</p>
                             </div>
                         </div>
                     </div>

@@ -7,7 +7,7 @@ interface PageHeaderProps {
 
 export default function PageHeader({ title, subtitle, backgroundImage, backgroundVideo }: PageHeaderProps) {
     return (
-        <section className="relative h-[400px] lg:h-[500px] flex items-center justify-center overflow-hidden">
+        <section className="relative h-[400px] lg:h-[500px] flex items-end justify-center overflow-hidden pt-28">
             {/* Background Video or Image with Overlay */}
             <div className="absolute inset-0">
                 {backgroundVideo ? (
@@ -35,7 +35,7 @@ export default function PageHeader({ title, subtitle, backgroundImage, backgroun
             </div>
 
             {/* Content */}
-            <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8">
+            <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 pb-12">
                 <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold text-white mb-4">
                     {title}
                 </h1>

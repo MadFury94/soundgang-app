@@ -123,7 +123,7 @@ export default async function ArtistPage({ params }: { params: Promise<{ slug: s
                 </div>
 
                 {/* Content */}
-                <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-end pb-16">
+                <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-end pb-16 pt-28">
                     {/* Back Button */}
                     <Link
                         href="/artists"
