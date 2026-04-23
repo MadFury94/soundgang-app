@@ -4,8 +4,6 @@ import { useState } from 'react';
 import PageHeader from '@/components/PageHeader';
 import { Mail, Phone, MapPin, Send } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
-
 export default function ContactPage() {
     const [formData, setFormData] = useState({
         name: '',

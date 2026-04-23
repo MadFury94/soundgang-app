@@ -9,7 +9,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://soundgang-api.onochi
 
 function getToken(): string | null {
     if (typeof window === 'undefined') return null;
-    return sessionStorage.getItem('sg_auth_token');
+    return localStorage.getItem('sg_auth_token');
 }
 
 function authHeaders(): HeadersInit {

@@ -46,14 +46,11 @@ export default function AdminLoginPage() {
             }
 
             // Decode role from the stored JWT to determine redirect destination
-            const token = sessionStorage.getItem('sg_auth_token');
+            // Use window.location for a full reload so useAuth re-initialises with the new token
+            const token = localStorage.getItem('sg_auth_token');
             const role = token ? getRoleFromToken(token) : null;
 
-            if (role === 'artist') {
-                router.replace('/admin/portal');
-            } else {
-                router.replace('/admin/dashboard');
-            }
+            window.location.href = role === 'artist' ? '/admin/portal' : '/admin/dashboard';
         } finally {
             setLoading(false);
         }

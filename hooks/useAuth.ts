@@ -42,7 +42,7 @@ export function useAuth(): UseAuthReturn {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const stored = sessionStorage.getItem(TOKEN_KEY);
+        const stored = localStorage.getItem(TOKEN_KEY);
         if (stored) {
             const decoded = decodeJWTPayload(stored);
             if (decoded) {
@@ -60,7 +60,7 @@ export function useAuth(): UseAuthReturn {
             if (!decoded) {
                 return { success: false, error: 'Invalid token received from server.' };
             }
-            sessionStorage.setItem(TOKEN_KEY, jwt);
+            localStorage.setItem(TOKEN_KEY, jwt);
             setToken(jwt);
             setUser(decoded);
             return { success: true };
@@ -71,7 +71,7 @@ export function useAuth(): UseAuthReturn {
     }, []);
 
     const logout = useCallback(() => {
-        sessionStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(TOKEN_KEY);
         setToken(null);
         setUser(null);
         if (typeof window !== 'undefined') {
