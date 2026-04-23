@@ -9,7 +9,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://soundgang-api.onochi
 
 function getToken(): string | null {
     if (typeof window === 'undefined') return null;
-    return sessionStorage.getItem('sg_admin_token');
+    return sessionStorage.getItem('sg_auth_token');
 }
 
 function authHeaders(): HeadersInit {
@@ -252,6 +252,80 @@ export async function adminUploadAudio(file: File, key: string): Promise<{ url: 
         body: formData,
     });
     return handleResponse<{ url: string }>(res);
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+export interface AuthUser {
+    id: number;
+    email: string;
+    role: 'admin' | 'artist';
+    artist_id: number | null;
+}
+
+export interface CreateUserPayload {
+    email: string;
+    password: string;
+    role?: 'admin' | 'artist';
+    artist_id?: number | null;
+}
+
+export interface UpdateUserPayload {
+    email?: string;
+    role?: 'admin' | 'artist';
+    artist_id?: number | null;
+}
+
+export async function apiLogin(email: string, password: string): Promise<{ token: string }> {
+    const res = await fetch(`${API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+    });
+    return handleResponse<{ token: string }>(res);
+}
+
+export async function apiGetMe(): Promise<AuthUser> {
+    const res = await fetch(`${API_URL}/api/auth/me`, { headers: authHeaders() });
+    return handleResponse<AuthUser>(res);
+}
+
+export async function apiCreateUser(data: CreateUserPayload): Promise<AuthUser> {
+    const res = await fetch(`${API_URL}/api/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify(data),
+    });
+    return handleResponse<AuthUser>(res);
+}
+
+export async function apiUpdateUser(id: number, data: UpdateUserPayload): Promise<AuthUser> {
+    const res = await fetch(`${API_URL}/api/users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify(data),
+    });
+    return handleResponse<AuthUser>(res);
+}
+
+export async function adminGetReleasesByArtist(artistId: number): Promise<unknown[]> {
+    const res = await fetch(`${API_URL}/api/releases?artist_id=${artistId}`, { headers: authHeaders() });
+    return handleResponse<unknown[]>(res);
+}
+
+export async function adminGetEventsByArtist(artistId: number): Promise<unknown[]> {
+    const res = await fetch(`${API_URL}/api/events?artist_id=${artistId}`, { headers: authHeaders() });
+    return handleResponse<unknown[]>(res);
+}
+
+export async function adminGetBlogPostsByArtist(artistId: number): Promise<unknown[]> {
+    const res = await fetch(`${API_URL}/api/blog?artist_id=${artistId}`, { headers: authHeaders() });
+    return handleResponse<unknown[]>(res);
+}
+
+export async function adminGetVideosByArtist(artistId: number): Promise<unknown[]> {
+    const res = await fetch(`${API_URL}/api/videos?artist_id=${artistId}`, { headers: authHeaders() });
+    return handleResponse<unknown[]>(res);
 }
 
 // ─── Health / Auth ────────────────────────────────────────────────────────────

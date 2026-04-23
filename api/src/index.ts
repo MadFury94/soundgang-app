@@ -1,3 +1,16 @@
+import {
+    signJWT,
+    verifyJWT,
+    requireAuth,
+    requireAdmin,
+    requireOwnership,
+    hashPassword,
+    verifyPassword,
+    isValidEmail,
+    isValidPassword,
+    type JWTPayload,
+} from './auth';
+
 /**
  * SoundGang API — Cloudflare Worker
  * Serves all data for the SoundGang Next.js frontend from D1 + R2.
@@ -23,6 +36,7 @@ export interface Env {
     R2_PUBLIC_URL: string;
     ENVIRONMENT: string;
     ADMIN_SECRET?: string; // Set this in Cloudflare dashboard secrets
+    JWT_SECRET: string;    // Set this in Cloudflare dashboard secrets
 }
 
 // ─── CORS headers ─────────────────────────────────────────────────────────────
@@ -87,10 +101,10 @@ export default {
 
                 if (!artist) return error('Artist not found', 404, origin);
 
-                // Get their tracks via releases
+                // Get their tracks via releases (join on artist_id with artist_slug fallback)
                 const { results: releases } = await env.DB.prepare(
-                    'SELECT * FROM releases WHERE artist_slug = ? ORDER BY release_date DESC'
-                ).bind(slug).all();
+                    'SELECT * FROM releases WHERE artist_id = (SELECT id FROM artists WHERE slug = ?) OR artist_slug = ? ORDER BY release_date DESC'
+                ).bind(slug, slug).all();
 
                 const releasesWithTracks = await Promise.all(
                     releases.map(async (r) => {
@@ -172,11 +186,21 @@ export default {
             // ── GET /api/events ─────────────────────────────────────────────────────
             if (request.method === 'GET' && path === '/api/events') {
                 const featured = url.searchParams.get('featured');
+                const artistIdParam = url.searchParams.get('artist_id');
+                const conditions: string[] = [];
+                const params: unknown[] = [];
+
+                if (featured === 'true') conditions.push('featured = 1');
+                if (artistIdParam) {
+                    conditions.push('artist_id = ?');
+                    params.push(parseInt(artistIdParam));
+                }
+
                 let query = 'SELECT * FROM events';
-                if (featured === 'true') query += ' WHERE featured = 1';
+                if (conditions.length) query += ' WHERE ' + conditions.join(' AND ');
                 query += ' ORDER BY iso_date ASC';
 
-                const { results } = await env.DB.prepare(query).all();
+                const { results } = await env.DB.prepare(query).bind(...params).all();
                 return json(results.map(formatEvent), 200, origin);
             }
 
@@ -184,11 +208,16 @@ export default {
             if (request.method === 'GET' && path === '/api/blog') {
                 const featured = url.searchParams.get('featured');
                 const limit = url.searchParams.get('limit');
+                const artistIdParam = url.searchParams.get('artist_id');
 
                 let query = 'SELECT * FROM blog_posts WHERE published = 1';
                 const params: unknown[] = [];
 
                 if (featured === 'true') query += ' AND featured = 1';
+                if (artistIdParam) {
+                    query += ' AND artist_id = ? AND artist_id IS NOT NULL';
+                    params.push(parseInt(artistIdParam));
+                }
                 query += ' ORDER BY published_at DESC';
                 if (limit) {
                     query += ' LIMIT ?';
@@ -213,9 +242,17 @@ export default {
 
             // ── GET /api/videos ─────────────────────────────────────────────────────
             if (request.method === 'GET' && path === '/api/videos') {
-                const { results } = await env.DB.prepare(
-                    'SELECT * FROM videos ORDER BY created_at DESC'
-                ).all();
+                const artistIdParam = url.searchParams.get('artist_id');
+                let query = 'SELECT * FROM videos';
+                const params: unknown[] = [];
+
+                if (artistIdParam) {
+                    query += ' WHERE artist_id = ?';
+                    params.push(parseInt(artistIdParam));
+                }
+                query += ' ORDER BY created_at DESC';
+
+                const { results } = await env.DB.prepare(query).bind(...params).all();
                 return json(results.map(formatVideo), 200, origin);
             }
 
@@ -255,6 +292,122 @@ export default {
 
                 const publicUrl = `${env.R2_PUBLIC_URL}/${imageKey}`;
                 return json({ url: publicUrl, key: imageKey }, 201, origin);
+            }
+
+            // ── POST /api/auth/login ─────────────────────────────────────────────────
+            if (request.method === 'POST' && path === '/api/auth/login') {
+                const body = await request.json() as Record<string, unknown>;
+                const email = body.email as string | undefined;
+                const password = body.password as string | undefined;
+
+                if (!email || !password) {
+                    return error('Invalid email or password', 401, origin);
+                }
+
+                const user = await env.DB.prepare(
+                    'SELECT id, email, password_hash, role, artist_id FROM users WHERE email = ?'
+                ).bind(email).first() as { id: number; email: string; password_hash: string; role: 'admin' | 'artist'; artist_id: number | null } | null;
+
+                if (!user) {
+                    return error('Invalid email or password', 401, origin);
+                }
+
+                const valid = await verifyPassword(password, user.password_hash);
+                if (!valid) {
+                    return error('Invalid email or password', 401, origin);
+                }
+
+                const token = await signJWT(
+                    { sub: String(user.id), email: user.email, role: user.role, artist_id: user.artist_id },
+                    env.JWT_SECRET
+                );
+                return json({ token }, 200, origin);
+            }
+
+            // ── GET /api/auth/me ─────────────────────────────────────────────────────
+            if (request.method === 'GET' && path === '/api/auth/me') {
+                const payload = await requireAuth(request, env);
+                const user = await env.DB.prepare(
+                    'SELECT id, email, role, artist_id FROM users WHERE id = ?'
+                ).bind(payload.sub).first() as { id: number; email: string; role: string; artist_id: number | null } | null;
+
+                if (!user) return error('Not found', 404, origin);
+                return json({ id: user.id, email: user.email, role: user.role, artist_id: user.artist_id }, 200, origin);
+            }
+
+            // ── POST /api/users ──────────────────────────────────────────────────────
+            if (request.method === 'POST' && path === '/api/users') {
+                await requireAdmin(request, env);
+                const body = await request.json() as Record<string, unknown>;
+                const email = body.email as string | undefined;
+                const password = body.password as string | undefined;
+                const role = (body.role as string | undefined) ?? 'artist';
+                const artist_id = body.artist_id as number | null | undefined;
+
+                if (!email || !isValidEmail(email)) {
+                    return error('Invalid email address', 400, origin);
+                }
+                if (!password || !isValidPassword(password)) {
+                    return error('Password must be at least 8 characters', 400, origin);
+                }
+
+                const existing = await env.DB.prepare(
+                    'SELECT id FROM users WHERE email = ?'
+                ).bind(email).first();
+                if (existing) return error('Email already taken', 409, origin);
+
+                if (artist_id != null) {
+                    const artist = await env.DB.prepare(
+                        'SELECT id FROM artists WHERE id = ?'
+                    ).bind(artist_id).first();
+                    if (!artist) return error('Artist not found', 404, origin);
+                }
+
+                const password_hash = await hashPassword(password);
+                const result = await env.DB.prepare(
+                    `INSERT INTO users (email, password_hash, role, artist_id) VALUES (?, ?, ?, ?)`
+                ).bind(email, password_hash, role, artist_id ?? null).run();
+
+                const created = await env.DB.prepare(
+                    'SELECT id, email, role, artist_id FROM users WHERE id = ?'
+                ).bind(result.meta.last_row_id).first() as { id: number; email: string; role: string; artist_id: number | null } | null;
+
+                return json({ id: created!.id, email: created!.email, role: created!.role, artist_id: created!.artist_id }, 201, origin);
+            }
+
+            // ── PUT /api/users/:id ───────────────────────────────────────────────────
+            const userIdMatch = path.match(/^\/api\/users\/(\d+)$/);
+            if (request.method === 'PUT' && userIdMatch) {
+                await requireAdmin(request, env);
+                const id = userIdMatch[1];
+                const body = await request.json() as Record<string, unknown>;
+
+                const existing = await env.DB.prepare(
+                    'SELECT id, email, role, artist_id FROM users WHERE id = ?'
+                ).bind(id).first() as { id: number; email: string; role: string; artist_id: number | null } | null;
+                if (!existing) return error('User not found', 404, origin);
+
+                const email = (body.email as string | undefined) ?? existing.email;
+                const role = (body.role as string | undefined) ?? existing.role;
+                const artist_id = 'artist_id' in body ? (body.artist_id as number | null) : existing.artist_id;
+
+                // Check one-to-one constraint: if setting artist_id, ensure no other user has it
+                if (artist_id != null) {
+                    const conflict = await env.DB.prepare(
+                        'SELECT id FROM users WHERE artist_id = ? AND id != ?'
+                    ).bind(artist_id, id).first();
+                    if (conflict) return error('Artist already linked to another account', 409, origin);
+                }
+
+                await env.DB.prepare(
+                    `UPDATE users SET email=?, role=?, artist_id=?, updated_at=datetime('now') WHERE id=?`
+                ).bind(email, role, artist_id, id).run();
+
+                const updated = await env.DB.prepare(
+                    'SELECT id, email, role, artist_id FROM users WHERE id = ?'
+                ).bind(id).first() as { id: number; email: string; role: string; artist_id: number | null } | null;
+
+                return json({ id: updated!.id, email: updated!.email, role: updated!.role, artist_id: updated!.artist_id }, 200, origin);
             }
 
             // ── GET /api/health ─────────────────────────────────────────────────────
@@ -329,17 +482,31 @@ export default {
 
             // ── POST /api/releases ───────────────────────────────────────────────────
             if (request.method === 'POST' && path === '/api/releases') {
-                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const user = await requireAuth(request, env);
                 const body = await request.json() as Record<string, unknown>;
                 if (!body.title || !body.slug) return error('title and slug are required', 400, origin);
+
+                const bodyArtistId = body.artist_id != null ? (body.artist_id as number) : null;
+
+                // Artist users can only create content for themselves
+                if (user.role === 'artist' && bodyArtistId !== user.artist_id) {
+                    return error('Forbidden', 403, origin);
+                }
+
+                // Validate artist_id FK if provided
+                if (bodyArtistId != null) {
+                    const artist = await env.DB.prepare('SELECT id FROM artists WHERE id = ?').bind(bodyArtistId).first();
+                    if (!artist) return error('Artist not found', 404, origin);
+                }
+
                 const tracks = (body.tracks as Record<string, unknown>[]) ?? [];
                 try {
                     const result = await env.DB.prepare(
-                        `INSERT INTO releases (slug, title, artist, artist_slug, release_date, type, cover_url, gradient,
+                        `INSERT INTO releases (slug, title, artist, artist_slug, artist_id, release_date, type, cover_url, gradient,
                          track_count, stream_url, spotify_url, apple_url, featured, description)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
                     ).bind(
-                        body.slug, body.title, body.artist ?? '', body.artist_slug ?? '',
+                        body.slug, body.title, body.artist ?? '', body.artist_slug ?? '', bodyArtistId,
                         body.release_date ?? '', body.type ?? 'Single', body.cover_url ?? '',
                         body.gradient ?? 'from-gray-700 via-gray-800 to-black',
                         tracks.length || 1, body.stream_url ?? '', body.spotify_url ?? '',
@@ -365,16 +532,21 @@ export default {
             // ── PUT /api/releases/:id ────────────────────────────────────────────────
             const releaseIdMatch = path.match(/^\/api\/releases\/(\d+)$/);
             if (request.method === 'PUT' && releaseIdMatch) {
-                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const user = await requireAuth(request, env);
                 const id = releaseIdMatch[1];
+                const existingRelease = await env.DB.prepare('SELECT * FROM releases WHERE id = ?').bind(id).first() as Record<string, unknown> | null;
+                if (!existingRelease) return error('Release not found', 404, origin);
+                if (!requireOwnership(user, existingRelease.artist_id as number | null)) return error('Forbidden', 403, origin);
+
                 const body = await request.json() as Record<string, unknown>;
+                const bodyArtistId = body.artist_id != null ? (body.artist_id as number) : (existingRelease.artist_id as number | null);
                 const tracks = (body.tracks as Record<string, unknown>[]) ?? [];
                 await env.DB.prepare(
-                    `UPDATE releases SET slug=?, title=?, artist=?, artist_slug=?, release_date=?, type=?, cover_url=?,
+                    `UPDATE releases SET slug=?, title=?, artist=?, artist_slug=?, artist_id=?, release_date=?, type=?, cover_url=?,
                      gradient=?, track_count=?, stream_url=?, spotify_url=?, apple_url=?, featured=?, description=?, updated_at=datetime('now')
                      WHERE id=?`
                 ).bind(
-                    body.slug, body.title, body.artist ?? '', body.artist_slug ?? '',
+                    body.slug, body.title, body.artist ?? '', body.artist_slug ?? '', bodyArtistId,
                     body.release_date ?? '', body.type ?? 'Single', body.cover_url ?? '',
                     body.gradient ?? 'from-gray-700 via-gray-800 to-black',
                     tracks.length || 1, body.stream_url ?? '', body.spotify_url ?? '',
@@ -397,8 +569,11 @@ export default {
 
             // ── DELETE /api/releases/:id ─────────────────────────────────────────────
             if (request.method === 'DELETE' && releaseIdMatch) {
-                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const user = await requireAuth(request, env);
                 const id = releaseIdMatch[1];
+                const existingRelease = await env.DB.prepare('SELECT * FROM releases WHERE id = ?').bind(id).first() as Record<string, unknown> | null;
+                if (!existingRelease) return error('Release not found', 404, origin);
+                if (!requireOwnership(user, existingRelease.artist_id as number | null)) return error('Forbidden', 403, origin);
                 await env.DB.prepare('DELETE FROM releases WHERE id = ?').bind(id).run();
                 return json({ success: true }, 200, origin);
             }
@@ -440,15 +615,27 @@ export default {
 
             // ── POST /api/events ─────────────────────────────────────────────────────
             if (request.method === 'POST' && path === '/api/events') {
-                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const user = await requireAuth(request, env);
                 const body = await request.json() as Record<string, unknown>;
                 if (!body.title || !body.slug) return error('title and slug are required', 400, origin);
+
+                const bodyArtistId = body.artist_id != null ? (body.artist_id as number) : null;
+
+                if (user.role === 'artist' && bodyArtistId !== user.artist_id) {
+                    return error('Forbidden', 403, origin);
+                }
+
+                if (bodyArtistId != null) {
+                    const artist = await env.DB.prepare('SELECT id FROM artists WHERE id = ?').bind(bodyArtistId).first();
+                    if (!artist) return error('Artist not found', 404, origin);
+                }
+
                 try {
                     const result = await env.DB.prepare(
-                        `INSERT INTO events (slug, title, artist, artist_slug, venue, location, event_date, iso_date, event_time, ticket_url, cover_url, gradient, featured, description)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                        `INSERT INTO events (slug, title, artist, artist_slug, artist_id, venue, location, event_date, iso_date, event_time, ticket_url, cover_url, gradient, featured, description)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
                     ).bind(
-                        body.slug, body.title, body.artist ?? '', body.artist_slug ?? '',
+                        body.slug, body.title, body.artist ?? '', body.artist_slug ?? '', bodyArtistId,
                         body.venue ?? '', body.location ?? '', body.event_date ?? '', body.iso_date ?? '',
                         body.event_time ?? '', body.ticket_url ?? '/contact', body.cover_url ?? '',
                         body.gradient ?? 'from-gray-700 via-gray-800 to-black', body.featured ? 1 : 0, body.description ?? ''
@@ -464,15 +651,26 @@ export default {
             // ── PUT /api/events/:id ──────────────────────────────────────────────────
             const eventIdMatch = path.match(/^\/api\/events\/(\d+)$/);
             if (request.method === 'PUT' && eventIdMatch) {
-                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const user = await requireAuth(request, env);
                 const id = eventIdMatch[1];
+                const existingEvent = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(id).first() as Record<string, unknown> | null;
+                if (!existingEvent) return error('Event not found', 404, origin);
+                if (!requireOwnership(user, existingEvent.artist_id as number | null)) return error('Forbidden', 403, origin);
+
                 const body = await request.json() as Record<string, unknown>;
+                const bodyArtistId = body.artist_id != null ? (body.artist_id as number) : (existingEvent.artist_id as number | null);
+
+                if (bodyArtistId != null) {
+                    const artist = await env.DB.prepare('SELECT id FROM artists WHERE id = ?').bind(bodyArtistId).first();
+                    if (!artist) return error('Artist not found', 404, origin);
+                }
+
                 await env.DB.prepare(
-                    `UPDATE events SET slug=?, title=?, artist=?, artist_slug=?, venue=?, location=?, event_date=?, iso_date=?,
+                    `UPDATE events SET slug=?, title=?, artist=?, artist_slug=?, artist_id=?, venue=?, location=?, event_date=?, iso_date=?,
                      event_time=?, ticket_url=?, cover_url=?, gradient=?, featured=?, description=?, updated_at=datetime('now')
                      WHERE id=?`
                 ).bind(
-                    body.slug, body.title, body.artist ?? '', body.artist_slug ?? '',
+                    body.slug, body.title, body.artist ?? '', body.artist_slug ?? '', bodyArtistId,
                     body.venue ?? '', body.location ?? '', body.event_date ?? '', body.iso_date ?? '',
                     body.event_time ?? '', body.ticket_url ?? '/contact', body.cover_url ?? '',
                     body.gradient ?? 'from-gray-700 via-gray-800 to-black', body.featured ? 1 : 0, body.description ?? '', id
@@ -484,27 +682,42 @@ export default {
 
             // ── DELETE /api/events/:id ───────────────────────────────────────────────
             if (request.method === 'DELETE' && eventIdMatch) {
-                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const user = await requireAuth(request, env);
                 const id = eventIdMatch[1];
+                const existingEvent = await env.DB.prepare('SELECT * FROM events WHERE id = ?').bind(id).first() as Record<string, unknown> | null;
+                if (!existingEvent) return error('Event not found', 404, origin);
+                if (!requireOwnership(user, existingEvent.artist_id as number | null)) return error('Forbidden', 403, origin);
                 await env.DB.prepare('DELETE FROM events WHERE id = ?').bind(id).run();
                 return json({ success: true }, 200, origin);
             }
 
             // ── POST /api/blog ───────────────────────────────────────────────────────
             if (request.method === 'POST' && path === '/api/blog') {
-                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const user = await requireAuth(request, env);
                 const body = await request.json() as Record<string, unknown>;
                 if (!body.title || !body.slug) return error('title and slug are required', 400, origin);
+
+                const bodyArtistId = body.artist_id != null ? (body.artist_id as number) : null;
+
+                if (user.role === 'artist' && bodyArtistId !== user.artist_id) {
+                    return error('Forbidden', 403, origin);
+                }
+
+                if (bodyArtistId != null) {
+                    const artist = await env.DB.prepare('SELECT id FROM artists WHERE id = ?').bind(bodyArtistId).first();
+                    if (!artist) return error('Artist not found', 404, origin);
+                }
+
                 try {
                     const result = await env.DB.prepare(
-                        `INSERT INTO blog_posts (slug, title, excerpt, content, author, category, cover_url, gradient, featured, published, published_at)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                        `INSERT INTO blog_posts (slug, title, excerpt, content, author, category, cover_url, gradient, featured, published, published_at, artist_id)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
                     ).bind(
                         body.slug, body.title, body.excerpt ?? '', body.content ?? '',
                         body.author ?? 'SoundGang', body.category ?? 'News', body.cover_url ?? '',
                         body.gradient ?? 'from-gray-700 via-gray-800 to-black',
                         body.featured ? 1 : 0, body.published !== false ? 1 : 0,
-                        body.published_at ?? new Date().toISOString()
+                        body.published_at ?? new Date().toISOString(), bodyArtistId
                     ).run();
                     const created = await env.DB.prepare('SELECT * FROM blog_posts WHERE id = ?').bind(result.meta.last_row_id).first();
                     return json(formatPost(created as Record<string, unknown>), 201, origin);
@@ -517,17 +730,28 @@ export default {
             // ── PUT /api/blog/:id ────────────────────────────────────────────────────
             const blogIdMatch = path.match(/^\/api\/blog\/(\d+)$/);
             if (request.method === 'PUT' && blogIdMatch) {
-                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const user = await requireAuth(request, env);
                 const id = blogIdMatch[1];
+                const existingPost = await env.DB.prepare('SELECT * FROM blog_posts WHERE id = ?').bind(id).first() as Record<string, unknown> | null;
+                if (!existingPost) return error('Post not found', 404, origin);
+                if (!requireOwnership(user, existingPost.artist_id as number | null)) return error('Forbidden', 403, origin);
+
                 const body = await request.json() as Record<string, unknown>;
+                const bodyArtistId = body.artist_id != null ? (body.artist_id as number) : (existingPost.artist_id as number | null);
+
+                if (bodyArtistId != null) {
+                    const artist = await env.DB.prepare('SELECT id FROM artists WHERE id = ?').bind(bodyArtistId).first();
+                    if (!artist) return error('Artist not found', 404, origin);
+                }
+
                 await env.DB.prepare(
                     `UPDATE blog_posts SET slug=?, title=?, excerpt=?, content=?, author=?, category=?, cover_url=?,
-                     gradient=?, featured=?, published=?, updated_at=datetime('now') WHERE id=?`
+                     gradient=?, featured=?, published=?, artist_id=?, updated_at=datetime('now') WHERE id=?`
                 ).bind(
                     body.slug, body.title, body.excerpt ?? '', body.content ?? '',
                     body.author ?? 'SoundGang', body.category ?? 'News', body.cover_url ?? '',
                     body.gradient ?? 'from-gray-700 via-gray-800 to-black',
-                    body.featured ? 1 : 0, body.published !== false ? 1 : 0, id
+                    body.featured ? 1 : 0, body.published !== false ? 1 : 0, bodyArtistId, id
                 ).run();
                 const updated = await env.DB.prepare('SELECT * FROM blog_posts WHERE id = ?').bind(id).first();
                 if (!updated) return error('Post not found', 404, origin);
@@ -536,21 +760,36 @@ export default {
 
             // ── DELETE /api/blog/:id ─────────────────────────────────────────────────
             if (request.method === 'DELETE' && blogIdMatch) {
-                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const user = await requireAuth(request, env);
                 const id = blogIdMatch[1];
+                const existingPost = await env.DB.prepare('SELECT * FROM blog_posts WHERE id = ?').bind(id).first() as Record<string, unknown> | null;
+                if (!existingPost) return error('Post not found', 404, origin);
+                if (!requireOwnership(user, existingPost.artist_id as number | null)) return error('Forbidden', 403, origin);
                 await env.DB.prepare('DELETE FROM blog_posts WHERE id = ?').bind(id).run();
                 return json({ success: true }, 200, origin);
             }
 
             // ── POST /api/videos ─────────────────────────────────────────────────────
             if (request.method === 'POST' && path === '/api/videos') {
-                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const user = await requireAuth(request, env);
                 const body = await request.json() as Record<string, unknown>;
                 if (!body.title) return error('title is required', 400, origin);
+
+                const bodyArtistId = body.artist_id != null ? (body.artist_id as number) : null;
+
+                if (user.role === 'artist' && bodyArtistId !== user.artist_id) {
+                    return error('Forbidden', 403, origin);
+                }
+
+                if (bodyArtistId != null) {
+                    const artist = await env.DB.prepare('SELECT id FROM artists WHERE id = ?').bind(bodyArtistId).first();
+                    if (!artist) return error('Artist not found', 404, origin);
+                }
+
                 const result = await env.DB.prepare(
-                    `INSERT INTO videos (title, artist, artist_slug, youtube_id, thumbnail, video_date)
-                     VALUES (?, ?, ?, ?, ?, ?)`
-                ).bind(body.title, body.artist ?? '', body.artist_slug ?? '', body.youtube_id ?? '', body.thumbnail ?? '', body.video_date ?? '').run();
+                    `INSERT INTO videos (title, artist, artist_slug, artist_id, youtube_id, thumbnail, video_date)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)`
+                ).bind(body.title, body.artist ?? '', body.artist_slug ?? '', bodyArtistId, body.youtube_id ?? '', body.thumbnail ?? '', body.video_date ?? '').run();
                 const created = await env.DB.prepare('SELECT * FROM videos WHERE id = ?').bind(result.meta.last_row_id).first();
                 return json(formatVideo(created as Record<string, unknown>), 201, origin);
             }
@@ -558,12 +797,23 @@ export default {
             // ── PUT /api/videos/:id ──────────────────────────────────────────────────
             const videoIdMatch = path.match(/^\/api\/videos\/(\d+)$/);
             if (request.method === 'PUT' && videoIdMatch) {
-                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const user = await requireAuth(request, env);
                 const id = videoIdMatch[1];
+                const existingVideo = await env.DB.prepare('SELECT * FROM videos WHERE id = ?').bind(id).first() as Record<string, unknown> | null;
+                if (!existingVideo) return error('Video not found', 404, origin);
+                if (!requireOwnership(user, existingVideo.artist_id as number | null)) return error('Forbidden', 403, origin);
+
                 const body = await request.json() as Record<string, unknown>;
+                const bodyArtistId = body.artist_id != null ? (body.artist_id as number) : (existingVideo.artist_id as number | null);
+
+                if (bodyArtistId != null) {
+                    const artist = await env.DB.prepare('SELECT id FROM artists WHERE id = ?').bind(bodyArtistId).first();
+                    if (!artist) return error('Artist not found', 404, origin);
+                }
+
                 await env.DB.prepare(
-                    `UPDATE videos SET title=?, artist=?, artist_slug=?, youtube_id=?, thumbnail=?, video_date=? WHERE id=?`
-                ).bind(body.title, body.artist ?? '', body.artist_slug ?? '', body.youtube_id ?? '', body.thumbnail ?? '', body.video_date ?? '', id).run();
+                    `UPDATE videos SET title=?, artist=?, artist_slug=?, artist_id=?, youtube_id=?, thumbnail=?, video_date=? WHERE id=?`
+                ).bind(body.title, body.artist ?? '', body.artist_slug ?? '', bodyArtistId, body.youtube_id ?? '', body.thumbnail ?? '', body.video_date ?? '', id).run();
                 const updated = await env.DB.prepare('SELECT * FROM videos WHERE id = ?').bind(id).first();
                 if (!updated) return error('Video not found', 404, origin);
                 return json(formatVideo(updated as Record<string, unknown>), 200, origin);
@@ -571,8 +821,11 @@ export default {
 
             // ── DELETE /api/videos/:id ───────────────────────────────────────────────
             if (request.method === 'DELETE' && videoIdMatch) {
-                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const user = await requireAuth(request, env);
                 const id = videoIdMatch[1];
+                const existingVideo = await env.DB.prepare('SELECT * FROM videos WHERE id = ?').bind(id).first() as Record<string, unknown> | null;
+                if (!existingVideo) return error('Video not found', 404, origin);
+                if (!requireOwnership(user, existingVideo.artist_id as number | null)) return error('Forbidden', 403, origin);
                 await env.DB.prepare('DELETE FROM videos WHERE id = ?').bind(id).run();
                 return json({ success: true }, 200, origin);
             }
@@ -580,6 +833,8 @@ export default {
             return error('Not found', 404, origin);
 
         } catch (err) {
+            // requireAuth / requireAdmin throw Response objects directly
+            if (err instanceof Response) return err;
             console.error('Worker error:', err);
             return error('Internal server error', 500, origin);
         }
@@ -622,6 +877,7 @@ function formatRelease(r: Record<string, unknown>) {
         title: r.title,
         artist: r.artist,
         artistSlug: r.artist_slug,
+        artistId: r.artist_id ?? null,
         releaseDate: r.release_date,
         type: r.type,
         coverImage: r.cover_url,
@@ -658,6 +914,7 @@ function formatEvent(r: Record<string, unknown>) {
         title: r.title,
         artist: r.artist,
         artistSlug: r.artist_slug,
+        artistId: r.artist_id ?? null,
         venue: r.venue,
         location: r.location,
         date: r.event_date,
@@ -684,6 +941,7 @@ function formatPost(r: Record<string, unknown>) {
         gradient: r.gradient,
         featured: r.featured === 1,
         publishedAt: r.published_at,
+        artistId: r.artist_id ?? null,
     };
 }
 
@@ -693,6 +951,7 @@ function formatVideo(r: Record<string, unknown>) {
         title: r.title,
         artist: r.artist,
         artistSlug: r.artist_slug,
+        artistId: r.artist_id ?? null,
         youtubeId: r.youtube_id,
         thumbnail: r.thumbnail,
         date: r.video_date,

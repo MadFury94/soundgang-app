@@ -45,7 +45,8 @@ export default function EditorJsEditor({ value, onChange, placeholder = 'Start w
             editorRef.current = new EditorJS({
                 holder: holderRef.current,
                 placeholder,
-                data: parsedData as Parameters<typeof EditorJS>[0]['data'],
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                data: parsedData as any,
                 tools: {
                     header: {
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any

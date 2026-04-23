@@ -4,30 +4,33 @@ export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Eye, EyeOff, Lock, User } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://soundgang-api.onochieazukaeme.workers.dev';
-const ADMIN_USERNAME = 'soundgang'; // fixed username — change as needed
+function getRoleFromToken(token: string): string | null {
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.role ?? null;
+    } catch {
+        return null;
+    }
+}
 
 export default function AdminLoginPage() {
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const { login } = useAuth();
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         e.stopPropagation();
 
-        if (!username.trim() || !password.trim()) {
-            setError('Please enter both username and password.');
-            return;
-        }
-
-        if (username.trim().toLowerCase() !== ADMIN_USERNAME) {
-            setError('Invalid username or password.');
+        if (!email.trim() || !password.trim()) {
+            setError('Please enter both email and password.');
             return;
         }
 
@@ -35,34 +38,22 @@ export default function AdminLoginPage() {
         setLoading(true);
 
         try {
-            const res = await fetch(`${API_URL}/api/health`, {
-                method: 'GET',
-                headers: { Authorization: `Bearer ${password}` },
-            });
+            const result = await login(email.trim(), password);
 
-            if (res.status === 401) {
-                setError('Invalid username or password.');
+            if (!result.success) {
+                setError(result.error ?? 'Login failed. Please try again.');
                 return;
             }
 
-            if (!res.ok) {
-                setError('Unable to connect to the server. Please try again.');
-                return;
-            }
+            // Decode role from the stored JWT to determine redirect destination
+            const token = sessionStorage.getItem('sg_auth_token');
+            const role = token ? getRoleFromToken(token) : null;
 
-            const data = await res.json() as { status?: string; admin?: boolean };
-
-            if (data.admin === true) {
-                // Store token and redirect
-                sessionStorage.setItem('sg_admin_token', password);
-                router.replace('/admin/dashboard');
+            if (role === 'artist') {
+                router.replace('/admin/portal');
             } else {
-                // Worker not yet redeployed with auth — fallback: accept any non-empty password
-                // and store it (will fail on actual API calls if wrong)
-                setError('Invalid username or password.');
+                router.replace('/admin/dashboard');
             }
-        } catch {
-            setError('Connection failed. Check your internet connection and try again.');
         } finally {
             setLoading(false);
         }
@@ -88,25 +79,25 @@ export default function AdminLoginPage() {
 
                 <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800 shadow-2xl">
                     <div className="text-center mb-6">
-                        <h1 className="text-white text-xl font-semibold mb-1">Admin Access</h1>
+                        <h1 className="text-white text-xl font-semibold mb-1">Sign In</h1>
                         <p className="text-gray-400 text-sm">Sign in to manage SoundGang content</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-                        {/* Username */}
+                        {/* Email */}
                         <div>
-                            <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-1.5">
-                                Username
+                            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1.5">
+                                Email
                             </label>
                             <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                                 <input
-                                    id="username"
-                                    type="text"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
-                                    placeholder="Admin username"
-                                    autoComplete="username"
+                                    id="email"
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="you@example.com"
+                                    autoComplete="email"
                                     autoFocus
                                     disabled={loading}
                                     className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#8B9D7F] transition-colors disabled:opacity-60"
@@ -126,7 +117,7 @@ export default function AdminLoginPage() {
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="Admin password"
+                                    placeholder="Password"
                                     autoComplete="current-password"
                                     disabled={loading}
                                     className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-12 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#8B9D7F] transition-colors disabled:opacity-60"

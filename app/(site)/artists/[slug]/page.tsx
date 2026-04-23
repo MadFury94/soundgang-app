@@ -4,6 +4,7 @@ import { Play, Music, MapPin, Users, ArrowLeft } from 'lucide-react';
 import { getArtistBySlug } from '@/lib/api';
 import type { Artist } from '@/lib/data/artists';
 import { buildMetadata, buildArtistJsonLd } from '@/lib/seo';
+import ArtistEmptyState from '@/components/admin/ArtistEmptyState';
 
 export const runtime = 'edge';
 
@@ -217,10 +218,12 @@ export default async function ArtistPage({ params }: { params: Promise<{ slug: s
             </section>
 
             {/* ── Top Tracks ───────────────────────────────────────────────── */}
-            {artist.topTracks.length > 0 && (
-                <section className="py-16 bg-gray-900/30">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <h2 className="text-2xl lg:text-3xl font-bold text-white mb-8">Top Tracks</h2>
+            <section className="py-16 bg-gray-900/30">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <h2 className="text-2xl lg:text-3xl font-bold text-white mb-8">Top Tracks</h2>
+                    {artist.topTracks.length === 0 ? (
+                        <ArtistEmptyState section="releases" />
+                    ) : (
                         <div className="space-y-3">
                             {artist.topTracks.map((track, index) => (
                                 <div
@@ -244,15 +247,17 @@ export default async function ArtistPage({ params }: { params: Promise<{ slug: s
                                 </div>
                             ))}
                         </div>
-                    </div>
-                </section>
-            )}
+                    )}
+                </div>
+            </section>
 
             {/* ── Albums ───────────────────────────────────────────────────── */}
-            {artist.albums.length > 0 && (
-                <section className="py-16 lg:py-24">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <h2 className="text-2xl lg:text-3xl font-bold text-white mb-8">Albums</h2>
+            <section className="py-16 lg:py-24">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <h2 className="text-2xl lg:text-3xl font-bold text-white mb-8">Albums</h2>
+                    {artist.albums.length === 0 ? (
+                        <ArtistEmptyState section="releases" />
+                    ) : (
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
                             {artist.albums.map((album) => (
                                 <div key={album.id} className="group cursor-pointer">
@@ -278,9 +283,9 @@ export default async function ArtistPage({ params }: { params: Promise<{ slug: s
                                 </div>
                             ))}
                         </div>
-                    </div>
-                </section>
-            )}
+                    )}
+                </div>
+            </section>
 
             {/* ── CTA ──────────────────────────────────────────────────────── */}
             <section className="py-16 border-t border-gray-800">

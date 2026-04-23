@@ -1,10 +1,10 @@
 'use client';
 import Image from 'next/image';
 import { LogOut } from 'lucide-react';
-import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function AdminHeader() {
-    const { logout } = useAdminAuth();
+    const { logout } = useAuth();
 
     return (
         <header className="h-14 bg-gray-950 border-b border-gray-800 flex items-center justify-between px-4 flex-shrink-0">

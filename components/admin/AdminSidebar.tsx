@@ -22,7 +22,7 @@ import {
     User,
 } from 'lucide-react';
 import { useState } from 'react';
-import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { useAuth } from '@/hooks/useAuth';
 
 interface NavItem {
     href: string;
@@ -54,7 +54,7 @@ const navItems: NavItem[] = [
 
 export default function AdminSidebar() {
     const pathname = usePathname();
-    const { logout } = useAdminAuth();
+    const { logout } = useAuth();
     const [mobileOpen, setMobileOpen] = useState(false);
     const [expandedItems, setExpandedItems] = useState<string[]>(['/admin/blog']);
 

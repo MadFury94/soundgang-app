@@ -3,24 +3,34 @@ import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
-import { useAdminAuth } from '@/hooks/useAdminAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { Toaster } from '@/components/ui/sonner';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
-    const { isAuthenticated, isLoading } = useAdminAuth();
+    const { user, isAuthenticated, isLoading } = useAuth();
     const isLoginPage = pathname === '/admin/login';
+    const isPortalPath = pathname.startsWith('/admin/portal');
 
     useEffect(() => {
         if (isLoading) return;
         if (!isAuthenticated && !isLoginPage) {
             router.replace('/admin/login');
+            return;
         }
         if (isAuthenticated && isLoginPage) {
+            router.replace(user?.role === 'artist' ? '/admin/portal' : '/admin/dashboard');
+            return;
+        }
+        if (isAuthenticated && user?.role === 'artist' && !isPortalPath) {
+            router.replace('/admin/portal');
+            return;
+        }
+        if (isAuthenticated && user?.role === 'admin' && isPortalPath) {
             router.replace('/admin/dashboard');
         }
-    }, [isAuthenticated, isLoading, isLoginPage, router]);
+    }, [isAuthenticated, isLoading, isLoginPage, isPortalPath, user, router]);
 
     // Login page — no sidebar/header
     if (isLoginPage) {
@@ -41,6 +51,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         );
     }
 
+    // Artist users — minimal pass-through (portal has its own layout)
+    if (user?.role === 'artist') {
+        return (
+            <>
+                {children}
+                <Toaster />
+            </>
+        );
+    }
+
+    // Admin users — full layout with sidebar + header
     return (
         <div className="flex h-screen bg-gray-900 overflow-hidden">
             <AdminSidebar />
