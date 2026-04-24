@@ -104,7 +104,7 @@ export default function ReleasesPage() {
                             className="inline-flex items-center gap-2 bg-[#8B9D7F] hover:bg-[#7a8c6f] text-white px-8 py-4 rounded-lg font-semibold transition-colors"
                         >
                             <Play className="w-5 h-5" fill="white" />
-                            STREAM ALL ON MUSIC ON WILDSTREAM
+                            STREAM ON WILDSTREAM
                         </a>
                     </div>
                 </div>
