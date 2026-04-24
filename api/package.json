@@ -13,6 +13,8 @@
         "db:migrate:003:local": "wrangler d1 execute soundgang-db --local --file=./migrations/003_users_and_fk.sql",
         "db:seed:admin": "wrangler d1 execute soundgang-db --remote --file=./migrations/004_seed_admin.sql",
         "db:seed:admin:local": "wrangler d1 execute soundgang-db --local --file=./migrations/004_seed_admin.sql",
+        "db:migrate:005": "wrangler d1 execute soundgang-db --remote --file=./migrations/005_playlist.sql",
+        "db:migrate:005:local": "wrangler d1 execute soundgang-db --local --file=./migrations/005_playlist.sql",
         "test": "vitest run"
     },
     "devDependencies": {

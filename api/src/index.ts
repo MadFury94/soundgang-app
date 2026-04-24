@@ -467,6 +467,16 @@ export default {
                     body.social_instagram ?? '', body.social_twitter ?? '', body.social_youtube ?? '', body.social_spotify ?? '',
                     id
                 ).run();
+
+                // Cascade name + slug update to all linked content rows
+                if (body.name || body.slug) {
+                    const cascadeName = body.name as string;
+                    const cascadeSlug = body.slug as string;
+                    await env.DB.prepare(`UPDATE releases SET artist=?, artist_slug=? WHERE artist_id=?`).bind(cascadeName, cascadeSlug, id).run();
+                    await env.DB.prepare(`UPDATE events   SET artist=?, artist_slug=? WHERE artist_id=?`).bind(cascadeName, cascadeSlug, id).run();
+                    await env.DB.prepare(`UPDATE videos   SET artist=?, artist_slug=? WHERE artist_id=?`).bind(cascadeName, cascadeSlug, id).run();
+                }
+
                 const updated = await env.DB.prepare('SELECT * FROM artists WHERE id = ?').bind(id).first();
                 if (!updated) return error('Artist not found', 404, origin);
                 return json(formatArtist(updated as Record<string, unknown>), 200, origin);
@@ -828,6 +838,91 @@ export default {
                 if (!requireOwnership(user, existingVideo.artist_id as number | null)) return error('Forbidden', 403, origin);
                 await env.DB.prepare('DELETE FROM videos WHERE id = ?').bind(id).run();
                 return json({ success: true }, 200, origin);
+            }
+
+            // ── GET /api/playlist ────────────────────────────────────────────────────
+            if (request.method === 'GET' && path === '/api/playlist') {
+                const rows = await env.DB.prepare(`
+                    SELECT t.id, t.title, t.duration, t.audio_url, t.featuring,
+                           r.title AS release_title, r.cover_url, r.artist
+                    FROM playlist_tracks pt
+                    JOIN tracks t ON pt.track_id = t.id
+                    JOIN releases r ON t.release_id = r.id
+                    WHERE pt.playlist_id = 1
+                    ORDER BY pt.position ASC
+                `).all<Record<string, unknown>>();
+                const tracks = (rows.results ?? []).map(row => ({
+                    id: row.id,
+                    title: row.title,
+                    duration: row.duration,
+                    audioUrl: row.audio_url,
+                    featuring: row.featuring || '',
+                    releaseTitle: row.release_title,
+                    coverImage: row.cover_url,
+                    artist: row.artist,
+                }));
+                return json(tracks, 200, origin);
+            }
+
+            // ── PUT /api/playlist ────────────────────────────────────────────────────
+            if (request.method === 'PUT' && path === '/api/playlist') {
+                try {
+                    await requireAdmin(request, env);
+                } catch (e) {
+                    if (e instanceof Response) return e;
+                    return error('Forbidden', 403, origin);
+                }
+                const body = await request.json() as { trackIds?: number[] };
+                const trackIds = body.trackIds ?? [];
+                const statements: D1PreparedStatement[] = [
+                    env.DB.prepare('DELETE FROM playlist_tracks WHERE playlist_id = 1'),
+                    ...trackIds.map((trackId, i) =>
+                        env.DB.prepare('INSERT INTO playlist_tracks (playlist_id, track_id, position) VALUES (1, ?, ?)').bind(trackId, i + 1)
+                    ),
+                    env.DB.prepare("UPDATE playlists SET updated_at = datetime('now') WHERE id = 1"),
+                ];
+                await env.DB.batch(statements);
+                const rows = await env.DB.prepare(`
+                    SELECT t.id, t.title, t.duration, t.audio_url, t.featuring,
+                           r.title AS release_title, r.cover_url, r.artist
+                    FROM playlist_tracks pt
+                    JOIN tracks t ON pt.track_id = t.id
+                    JOIN releases r ON t.release_id = r.id
+                    WHERE pt.playlist_id = 1
+                    ORDER BY pt.position ASC
+                `).all<Record<string, unknown>>();
+                const tracks = (rows.results ?? []).map(row => ({
+                    id: row.id,
+                    title: row.title,
+                    duration: row.duration,
+                    audioUrl: row.audio_url,
+                    featuring: row.featuring || '',
+                    releaseTitle: row.release_title,
+                    coverImage: row.cover_url,
+                    artist: row.artist,
+                }));
+                return json(tracks, 200, origin);
+            }
+
+            // ── GET /api/media ───────────────────────────────────────────────────────
+            if (request.method === 'GET' && path === '/api/media') {
+                await requireAdmin(request, env);
+                const typeParam = url.searchParams.get('type') as 'image' | 'audio' | null;
+                const listed = await env.MEDIA.list();
+                let objects = listed.objects;
+                if (typeParam === 'image') {
+                    objects = objects.filter(obj => (obj.httpMetadata?.contentType ?? '').startsWith('image/'));
+                } else if (typeParam === 'audio') {
+                    objects = objects.filter(obj => (obj.httpMetadata?.contentType ?? '').startsWith('audio/'));
+                }
+                const media = objects.map(obj => ({
+                    key: obj.key,
+                    url: `${env.R2_PUBLIC_URL}/${obj.key}`,
+                    size: obj.size,
+                    contentType: obj.httpMetadata?.contentType ?? '',
+                    lastModified: obj.uploaded?.toISOString() ?? '',
+                }));
+                return json(media, 200, origin);
             }
 
             return error('Not found', 404, origin);

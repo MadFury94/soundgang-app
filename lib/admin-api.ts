@@ -42,6 +42,13 @@ export async function adminGetArtists() {
     return handleResponse<unknown[]>(res);
 }
 
+export async function adminGetArtistById(id: number): Promise<unknown> {
+    const artists = await adminGetArtists();
+    const found = (artists as Record<string, unknown>[]).find((a) => Number(a.id) === id);
+    if (!found) throw new Error('404');
+    return found;
+}
+
 export async function adminCreateArtist(data: Record<string, unknown>) {
     const res = await fetch(`${API_URL}/api/artists`, {
         method: 'POST',
@@ -73,6 +80,11 @@ export async function adminDeleteArtist(id: number) {
 export async function adminGetReleases() {
     const res = await fetch(`${API_URL}/api/releases`, { headers: authHeaders() });
     return handleResponse<unknown[]>(res);
+}
+
+export async function adminGetRelease(id: number): Promise<unknown> {
+    const res = await fetch(`${API_URL}/api/releases/${id}`, { headers: authHeaders() });
+    return handleResponse<unknown>(res);
 }
 
 export async function adminCreateRelease(data: Record<string, unknown>) {
@@ -228,6 +240,24 @@ export async function adminDeleteVideo(id: number) {
     return handleResponse<{ success: boolean }>(res);
 }
 
+// ─── Media ────────────────────────────────────────────────────────────────────
+
+export interface MediaObject {
+    key: string;
+    url: string;
+    size: number;
+    contentType: string;
+    lastModified: string;
+}
+
+export async function adminGetMedia(type?: 'image' | 'audio' | 'all'): Promise<MediaObject[]> {
+    const params = new URLSearchParams();
+    if (type && type !== 'all') params.set('type', type);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    const res = await fetch(`${API_URL}/api/media${query}`, { headers: authHeaders() });
+    return handleResponse<MediaObject[]>(res);
+}
+
 // ─── Uploads ──────────────────────────────────────────────────────────────────
 
 export async function adminUploadImage(file: File, key: string): Promise<{ url: string }> {
@@ -341,4 +371,31 @@ export async function adminVerifyToken(token: string): Promise<boolean> {
     } catch {
         return false;
     }
+}
+
+// ─── Playlist ─────────────────────────────────────────────────────────────────
+
+export interface PlaylistTrack {
+    id: number;
+    title: string;
+    duration: string;
+    audioUrl: string;
+    featuring: string;
+    releaseTitle: string;
+    coverImage: string;
+    artist: string;
+}
+
+export async function adminGetPlaylist(): Promise<PlaylistTrack[]> {
+    const res = await fetch(`${API_URL}/api/playlist`);
+    return handleResponse<PlaylistTrack[]>(res);
+}
+
+export async function adminSavePlaylist(trackIds: number[]): Promise<PlaylistTrack[]> {
+    const res = await fetch(`${API_URL}/api/playlist`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ trackIds }),
+    });
+    return handleResponse<PlaylistTrack[]>(res);
 }

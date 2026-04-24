@@ -1,7 +1,8 @@
 'use client';
 import { useState, useRef } from 'react';
-import { Music, Upload } from 'lucide-react';
+import { Music, Upload, FolderOpen } from 'lucide-react';
 import { adminUploadAudio } from '@/lib/admin-api';
+import MediaPickerModal from '@/components/admin/MediaPickerModal';
 
 interface AudioUploadFieldProps {
     label?: string;
@@ -18,6 +19,7 @@ export default function AudioUploadField({
 }: AudioUploadFieldProps) {
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [pickerOpen, setPickerOpen] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
 
     async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -60,6 +62,14 @@ export default function AudioUploadField({
                     <Upload className="w-4 h-4" />
                     {uploading ? 'Uploading...' : 'Upload'}
                 </button>
+                <button
+                    type="button"
+                    onClick={() => setPickerOpen(true)}
+                    className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm flex items-center gap-1.5 transition-colors"
+                >
+                    <FolderOpen className="w-4 h-4" />
+                    Browse
+                </button>
                 <input
                     ref={fileRef}
                     type="file"
@@ -69,6 +79,12 @@ export default function AudioUploadField({
                 />
             </div>
             {error && <p className="text-red-400 text-xs">{error}</p>}
+            <MediaPickerModal
+                open={pickerOpen}
+                onOpenChange={setPickerOpen}
+                defaultType="audio"
+                onSelect={onChange}
+            />
         </div>
     );
 }

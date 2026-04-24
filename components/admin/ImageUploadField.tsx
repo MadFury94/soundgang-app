@@ -1,9 +1,10 @@
 'use client';
 import { useState, useRef } from 'react';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, FolderOpen } from 'lucide-react';
 import { adminUploadImage } from '@/lib/admin-api';
 import { validateImageFile } from '@/lib/admin-utils';
 import Image from 'next/image';
+import MediaPickerModal from '@/components/admin/MediaPickerModal';
 
 interface ImageUploadFieldProps {
     label?: string;
@@ -20,6 +21,7 @@ export default function ImageUploadField({
 }: ImageUploadFieldProps) {
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [pickerOpen, setPickerOpen] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
 
     async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -66,6 +68,14 @@ export default function ImageUploadField({
                     <Upload className="w-4 h-4" />
                     {uploading ? 'Uploading...' : 'Upload'}
                 </button>
+                <button
+                    type="button"
+                    onClick={() => setPickerOpen(true)}
+                    className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-sm flex items-center gap-1.5 transition-colors"
+                >
+                    <FolderOpen className="w-4 h-4" />
+                    Browse
+                </button>
                 <input
                     ref={fileRef}
                     type="file"
@@ -93,6 +103,12 @@ export default function ImageUploadField({
                     </button>
                 </div>
             )}
+            <MediaPickerModal
+                open={pickerOpen}
+                onOpenChange={setPickerOpen}
+                defaultType="image"
+                onSelect={onChange}
+            />
         </div>
     );
 }

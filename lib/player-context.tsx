@@ -9,8 +9,16 @@ import {
     useCallback,
     type ReactNode,
 } from 'react';
-import type { Track } from '@/lib/data/releases';
-import { getAllTracks } from '@/lib/data/releases';
+interface Track {
+    id: number;
+    title: string;
+    duration: string;
+    audioUrl: string;
+    featuring?: string;
+    releaseTitle?: string;
+    coverImage?: string;
+    artist?: string;
+}
 
 // =============================================================================
 // PLAYER CONTEXT
@@ -95,12 +103,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     // Auto-load all tracks into the queue on mount so the player bar is visible
     useEffect(() => {
-        const tracks = getAllTracks();
-        if (tracks.length > 0) {
-            setQueueState(tracks);
-            setCurrentIndex(0);
-            setIsVisible(true);
-        }
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'https://soundgang-api.onochieazukaeme.workers.dev';
+        fetch(`${apiUrl}/api/playlist`)
+            .then((res) => res.json())
+            .then((data: unknown) => {
+                const tracks = data as Track[];
+                if (tracks.length > 0) {
+                    setQueueState(tracks);
+                    setCurrentIndex(0);
+                    setIsVisible(true);
+                }
+            })
+            .catch(() => { /* silent fail — player stays hidden */ });
     }, []);
 
     // When currentIndex or queue changes, load the new track

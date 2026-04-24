@@ -2,17 +2,15 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Plus, Pencil, Trash2, Disc3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import ContentTable from '@/components/admin/ContentTable';
 import ConfirmDialog from '@/components/admin/ConfirmDialog';
-import ReleaseForm from '@/components/admin/forms/ReleaseForm';
 import {
     adminGetReleases,
-    adminCreateRelease,
-    adminUpdateRelease,
     adminDeleteRelease,
 } from '@/lib/admin-api';
 
@@ -28,12 +26,10 @@ interface Release {
 }
 
 export default function ReleasesPage() {
+    const router = useRouter();
     const [releases, setReleases] = useState<Release[]>([]);
     const [loading, setLoading] = useState(true);
-    const [formOpen, setFormOpen] = useState(false);
-    const [editItem, setEditItem] = useState<Release | null>(null);
     const [deleteId, setDeleteId] = useState<number | null>(null);
-    const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
 
     async function load() {
@@ -48,26 +44,6 @@ export default function ReleasesPage() {
     }
 
     useEffect(() => { load(); }, []);
-
-    async function handleSubmit(data: Record<string, unknown>) {
-        setSaving(true);
-        try {
-            if (editItem) {
-                await adminUpdateRelease(editItem.id, data);
-                toast.success('Release updated');
-            } else {
-                await adminCreateRelease(data);
-                toast.success('Release created');
-            }
-            setFormOpen(false);
-            setEditItem(null);
-            await load();
-        } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'Failed to save release');
-        } finally {
-            setSaving(false);
-        }
-    }
 
     async function handleDelete() {
         if (!deleteId) return;
@@ -124,10 +100,16 @@ export default function ReleasesPage() {
             label: 'Actions',
             render: (row: Release) => (
                 <div className="flex gap-2">
-                    <button onClick={() => { setEditItem(row); setFormOpen(true); }} className="p-1.5 rounded text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">
+                    <button
+                        onClick={() => router.push(`/admin/releases/${row.id}`)}
+                        className="p-1.5 rounded text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+                    >
                         <Pencil className="w-4 h-4" />
                     </button>
-                    <button onClick={() => setDeleteId(row.id)} className="p-1.5 rounded text-gray-400 hover:text-red-400 hover:bg-gray-700 transition-colors">
+                    <button
+                        onClick={() => setDeleteId(row.id)}
+                        className="p-1.5 rounded text-gray-400 hover:text-red-400 hover:bg-gray-700 transition-colors"
+                    >
                         <Trash2 className="w-4 h-4" />
                     </button>
                 </div>
@@ -143,7 +125,7 @@ export default function ReleasesPage() {
                     <p className="text-gray-400 text-sm mt-0.5">{releases.length} total</p>
                 </div>
                 <button
-                    onClick={() => { setEditItem(null); setFormOpen(true); }}
+                    onClick={() => router.push('/admin/releases/new')}
                     className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium"
                     style={{ backgroundColor: '#8B9D7F' }}
                 >
@@ -152,14 +134,6 @@ export default function ReleasesPage() {
             </div>
 
             <ContentTable columns={columns} data={releases} isLoading={loading} emptyMessage="No releases yet." />
-
-            <ReleaseForm
-                open={formOpen}
-                onOpenChange={(open) => { setFormOpen(open); if (!open) setEditItem(null); }}
-                initialData={editItem}
-                onSubmit={handleSubmit}
-                isLoading={saving}
-            />
 
             <ConfirmDialog
                 open={deleteId !== null}

@@ -23,10 +23,12 @@ interface BlogPostFormProps {
     initialData?: Record<string, unknown> | null;
     onSubmit: (data: Record<string, unknown>) => Promise<void>;
     isLoading?: boolean;
+    artists?: { id: number; name: string }[];
 }
 
-export default function BlogPostForm({ open, onOpenChange, initialData, onSubmit, isLoading }: BlogPostFormProps) {
+export default function BlogPostForm({ open, onOpenChange, initialData, onSubmit, isLoading, artists = [] }: BlogPostFormProps) {
     const [form, setForm] = useState<BlogPostFormData>(defaultForm);
+    const [artistTag, setArtistTag] = useState<string>('');
 
     useEffect(() => {
         if (initialData) {
@@ -38,8 +40,12 @@ export default function BlogPostForm({ open, onOpenChange, initialData, onSubmit
                 gradient: String(initialData.gradient ?? 'from-gray-700 via-gray-800 to-black'),
                 featured: Boolean(initialData.featured), published: initialData.published !== false,
             });
+            setArtistTag(
+                initialData.artistId == null ? '' : String(initialData.artistId)
+            );
         } else {
             setForm(defaultForm);
+            setArtistTag('');
         }
     }, [initialData, open]);
 
@@ -58,6 +64,7 @@ export default function BlogPostForm({ open, onOpenChange, initialData, onSubmit
             title: form.title, slug: form.slug, excerpt: form.excerpt, content: form.content,
             author: form.author, category: form.category, cover_url: form.coverUrl,
             gradient: form.gradient, featured: form.featured ? 1 : 0, published: form.published ? 1 : 0,
+            artist_id: artistTag === '' ? null : Number(artistTag),
         });
     }
 
@@ -84,7 +91,17 @@ export default function BlogPostForm({ open, onOpenChange, initialData, onSubmit
                             </select>
                         </div>
                     </div>
-                    <div><label className={labelClass}>Excerpt</label><textarea className={inputClass} rows={2} value={form.excerpt} onChange={(e) => set('excerpt', e.target.value)} /></div>
+                    <div>
+                        <label className={labelClass}>Tag</label>
+                        <select className={inputClass} value={artistTag} onChange={(e) => setArtistTag(e.target.value)}>
+                            <option value="">SoundGang</option>
+                            {[...artists]
+                                .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+                                .map((a) => (
+                                    <option key={a.id} value={String(a.id)}>{a.name}</option>
+                                ))}
+                        </select>
+                    </div>                    <div><label className={labelClass}>Excerpt</label><textarea className={inputClass} rows={2} value={form.excerpt} onChange={(e) => set('excerpt', e.target.value)} /></div>
                     <div><label className={labelClass}>Content</label><textarea className={inputClass} rows={8} value={form.content} onChange={(e) => set('content', e.target.value)} /></div>
                     <ImageUploadField label="Cover Image URL" value={form.coverUrl} onChange={(v) => set('coverUrl', v)} />
                     <div><label className={labelClass}>Gradient</label><input className={inputClass} value={form.gradient} onChange={(e) => set('gradient', e.target.value)} /></div>

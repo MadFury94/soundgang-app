@@ -2,18 +2,18 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import ContentTable from '@/components/admin/ContentTable';
 import ConfirmDialog from '@/components/admin/ConfirmDialog';
-import ArtistForm from '@/components/admin/forms/ArtistForm';
 import {
     adminGetArtists,
     adminCreateArtist,
-    adminUpdateArtist,
     adminDeleteArtist,
 } from '@/lib/admin-api';
+import ArtistForm from '@/components/admin/forms/ArtistForm';
 
 interface Artist {
     id: number;
@@ -24,13 +24,13 @@ interface Artist {
 }
 
 export default function ArtistsPage() {
+    const router = useRouter();
     const [artists, setArtists] = useState<Artist[]>([]);
     const [loading, setLoading] = useState(true);
-    const [formOpen, setFormOpen] = useState(false);
-    const [editItem, setEditItem] = useState<Artist | null>(null);
     const [deleteId, setDeleteId] = useState<number | null>(null);
-    const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [formOpen, setFormOpen] = useState(false);
+    const [saving, setSaving] = useState(false);
 
     async function load() {
         try {
@@ -45,21 +45,15 @@ export default function ArtistsPage() {
 
     useEffect(() => { load(); }, []);
 
-    async function handleSubmit(data: Record<string, unknown>) {
+    async function handleCreate(data: Record<string, unknown>) {
         setSaving(true);
         try {
-            if (editItem) {
-                await adminUpdateArtist(editItem.id, data);
-                toast.success('Artist updated');
-            } else {
-                await adminCreateArtist(data);
-                toast.success('Artist created');
-            }
+            await adminCreateArtist(data);
+            toast.success('Artist created');
             setFormOpen(false);
-            setEditItem(null);
             await load();
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'Failed to save artist');
+            toast.error(err instanceof Error ? err.message : 'Failed to create artist');
         } finally {
             setSaving(false);
         }
@@ -98,7 +92,7 @@ export default function ArtistsPage() {
             render: (row: Artist) => (
                 <div className="flex gap-2">
                     <button
-                        onClick={() => { setEditItem(row); setFormOpen(true); }}
+                        onClick={() => router.push(`/admin/artists/${row.id}`)}
                         className="p-1.5 rounded text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
                     >
                         <Pencil className="w-4 h-4" />
@@ -122,7 +116,7 @@ export default function ArtistsPage() {
                     <p className="text-gray-400 text-sm mt-0.5">{artists.length} total</p>
                 </div>
                 <button
-                    onClick={() => { setEditItem(null); setFormOpen(true); }}
+                    onClick={() => setFormOpen(true)}
                     className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors"
                     style={{ backgroundColor: '#8B9D7F' }}
                 >
@@ -140,9 +134,9 @@ export default function ArtistsPage() {
 
             <ArtistForm
                 open={formOpen}
-                onOpenChange={(open) => { setFormOpen(open); if (!open) setEditItem(null); }}
-                initialData={editItem}
-                onSubmit={handleSubmit}
+                onOpenChange={setFormOpen}
+                initialData={null}
+                onSubmit={handleCreate}
                 isLoading={saving}
             />
 

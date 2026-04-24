@@ -1,20 +1,13 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, ListMusic, Music, CheckCircle, GripVertical, Trash2 } from 'lucide-react';
-import { adminGetReleases } from '@/lib/admin-api';
+import { toast } from 'sonner';
+import { adminGetReleases, adminGetPlaylist, adminSavePlaylist } from '@/lib/admin-api';
+import type { PlaylistTrack } from '@/lib/admin-api';
 
-interface Track {
-    id: number;
-    title: string;
-    duration: string;
-    audioUrl: string;
-    featuring?: string;
-    releaseTitle?: string;
-    coverImage?: string;
-    artist?: string;
-}
+type Track = PlaylistTrack;
 
 interface Release {
     id: number;
@@ -31,6 +24,8 @@ export default function PlayerPlaylistPage() {
     const [playlist, setPlaylist] = useState<Track[]>([]);
     const [activeTrack, setActiveTrack] = useState<Track | null>(null);
     const [saved, setSaved] = useState(false);
+    const dragIndex = useRef<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
     useEffect(() => {
         adminGetReleases()
@@ -38,19 +33,18 @@ export default function PlayerPlaylistPage() {
             .catch(() => { })
             .finally(() => setLoading(false));
 
-        // Load saved playlist from localStorage
-        try {
-            const saved = localStorage.getItem('sg_admin_playlist');
-            if (saved) setPlaylist(JSON.parse(saved) as Track[]);
-        } catch { /* ignore */ }
+        adminGetPlaylist()
+            .then((tracks) => { if (tracks.length > 0) setPlaylist(tracks); })
+            .catch(() => { });
     }, []);
 
     function addToPlaylist(track: Track, release: Release) {
         const enriched: Track = {
             ...track,
             releaseTitle: release.title,
-            coverImage: release.coverImage,
+            coverImage: release.coverImage ?? '',
             artist: release.artist,
+            featuring: track.featuring ?? '',
         };
         if (playlist.find((t) => t.id === track.id)) return; // already in playlist
         setPlaylist((prev) => [...prev, enriched]);
@@ -64,14 +58,43 @@ export default function PlayerPlaylistPage() {
         setActiveTrack(track);
     }
 
-    function savePlaylist() {
-        localStorage.setItem('sg_admin_playlist', JSON.stringify(playlist));
-        // Also store the active track
-        if (activeTrack) {
-            localStorage.setItem('sg_admin_now_playing', JSON.stringify(activeTrack));
+    async function savePlaylist() {
+        try {
+            await adminSavePlaylist(playlist.map((t) => t.id));
+            setSaved(true);
+            setTimeout(() => setSaved(false), 2000);
+        } catch {
+            toast.error('Failed to save playlist. Please try again.');
         }
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
+    }
+
+    function handleDragStart(idx: number) {
+        dragIndex.current = idx;
+    }
+
+    function handleDragOver(e: React.DragEvent, idx: number) {
+        e.preventDefault();
+        setDragOverIndex(idx);
+    }
+
+    function handleDrop(idx: number) {
+        const from = dragIndex.current;
+        if (from === null || from === idx) {
+            dragIndex.current = null;
+            setDragOverIndex(null);
+            return;
+        }
+        const reordered = [...playlist];
+        const [moved] = reordered.splice(from, 1);
+        reordered.splice(idx, 0, moved);
+        setPlaylist(reordered);
+        dragIndex.current = null;
+        setDragOverIndex(null);
+    }
+
+    function handleDragEnd() {
+        dragIndex.current = null;
+        setDragOverIndex(null);
     }
 
     function isInPlaylist(trackId: number) {
@@ -217,7 +240,15 @@ export default function PlayerPlaylistPage() {
                         <div className="bg-gray-800 rounded-xl overflow-hidden max-h-[50vh] overflow-y-auto">
                             <div className="divide-y divide-gray-700/50">
                                 {playlist.map((track, idx) => (
-                                    <div key={track.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 transition-colors group">
+                                    <div
+                                        key={track.id}
+                                        draggable
+                                        onDragStart={() => handleDragStart(idx)}
+                                        onDragOver={(e) => handleDragOver(e, idx)}
+                                        onDrop={() => handleDrop(idx)}
+                                        onDragEnd={handleDragEnd}
+                                        className={`flex items-center gap-3 px-4 py-3 hover:bg-gray-700/50 transition-colors group cursor-grab active:cursor-grabbing ${dragOverIndex === idx ? 'border-t-2 border-[#8B9D7F]' : ''}`}
+                                    >
                                         <GripVertical className="w-4 h-4 text-gray-600 flex-shrink-0" />
                                         <span className="text-gray-500 text-xs w-5 text-center">{idx + 1}</span>
                                         <div className="flex-1 min-w-0">
@@ -239,7 +270,7 @@ export default function PlayerPlaylistPage() {
                     )}
 
                     <p className="text-gray-500 text-xs">
-                        Playlist is saved to browser storage. When the site loads, the player will use this playlist and start with the "Now Playing" track.
+                        Drag tracks to reorder. Changes are saved to the server when you click Save Playlist.
                     </p>
                 </div>
             </div>

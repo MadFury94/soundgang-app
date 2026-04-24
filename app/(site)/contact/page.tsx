@@ -1,8 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import PageHeader from '@/components/PageHeader';
-import { Mail, Phone, MapPin, Send } from 'lucide-react';
 
 export default function ContactPage() {
     const [formData, setFormData] = useState({

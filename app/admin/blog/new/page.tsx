@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import NextDynamic from 'next/dynamic';
 import { ArrowLeft, Save, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
-import { adminCreateBlogPost, adminUploadImage } from '@/lib/admin-api';
+import { adminCreateBlogPost, adminUploadImage, adminGetArtists } from '@/lib/admin-api';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,6 +36,14 @@ export default function NewBlogPostPage() {
     const [featured, setFeatured] = useState(false);
     const [published, setPublished] = useState(true);
     const [uploadingCover, setUploadingCover] = useState(false);
+    const [artistTag, setArtistTag] = useState('');
+    const [artists, setArtists] = useState<{ id: number; name: string }[]>([]);
+
+    useEffect(() => {
+        adminGetArtists()
+            .then((data) => setArtists(data as { id: number; name: string }[]))
+            .catch(() => { /* non-critical */ });
+    }, []);
 
     function handleTitleChange(val: string) {
         setTitle(val);
@@ -76,6 +84,7 @@ export default function NewBlogPostPage() {
                 featured: featured ? 1 : 0,
                 published: publishState ? 1 : 0,
                 published_at: new Date().toISOString(),
+                artist_id: artistTag === '' ? null : Number(artistTag),
             });
             router.push('/admin/blog');
         } catch (err) {
@@ -225,6 +234,23 @@ export default function NewBlogPostPage() {
                             onChange={(e) => setAuthor(e.target.value)}
                             className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#8B9D7F]"
                         />
+                    </div>
+
+                    {/* Tag */}
+                    <div className="bg-gray-800 rounded-xl p-4 space-y-2">
+                        <h3 className="text-white font-semibold text-sm">Tag</h3>
+                        <select
+                            value={artistTag}
+                            onChange={(e) => setArtistTag(e.target.value)}
+                            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#8B9D7F]"
+                        >
+                            <option value="">SoundGang</option>
+                            {[...artists]
+                                .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+                                .map((a) => (
+                                    <option key={a.id} value={String(a.id)}>{a.name}</option>
+                                ))}
+                        </select>
                     </div>
 
                     {/* Cover image */}
