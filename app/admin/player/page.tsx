@@ -1,5 +1,6 @@
-'use client';
+﻿'use client';
 export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
 import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, ListMusic, Music, CheckCircle, GripVertical, Trash2 } from 'lucide-react';

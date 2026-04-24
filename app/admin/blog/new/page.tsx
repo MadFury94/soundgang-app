@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { adminCreateBlogPost, adminUploadImage, adminGetArtists } from '@/lib/admin-api';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
 const EditorJsEditor = NextDynamic(() => import('@/components/admin/EditorJsEditor'), { ssr: false });
 

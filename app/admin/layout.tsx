@@ -1,4 +1,5 @@
 'use client';
+export const runtime = 'edge';
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';

@@ -1,10 +1,10 @@
 'use client';
 export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import ImageUploadField from '@/components/admin/ImageUploadField';

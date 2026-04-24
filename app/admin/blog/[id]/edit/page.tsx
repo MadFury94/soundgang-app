@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { adminGetBlogPosts, adminUpdateBlogPost, adminUploadImage, adminGetArtists } from '@/lib/admin-api';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
 const EditorJsEditor = NextDynamic(() => import('@/components/admin/EditorJsEditor'), { ssr: false });
 

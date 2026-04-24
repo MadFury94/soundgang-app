@@ -1,5 +1,6 @@
-'use client';
+﻿'use client';
 export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
 import { useEffect, useState } from 'react';
 import { Mic2, Disc3, Calendar, FileText, Video, Plus } from 'lucide-react';
