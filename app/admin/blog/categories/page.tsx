@@ -1,6 +1,5 @@
 ﻿'use client';
 export const dynamic = 'force-dynamic';
-export const runtime = 'edge';
 
 import { useState } from 'react';
 import { Plus, Trash2, Edit2, Check, X } from 'lucide-react';

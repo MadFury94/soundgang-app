@@ -6,6 +6,7 @@ import {
     LayoutDashboard,
     Mic2,
     Disc3,
+    Music,
     Calendar,
     FileText,
     Video,
@@ -35,6 +36,7 @@ const navItems: NavItem[] = [
     { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/artists', label: 'Artists', icon: Mic2 },
     { href: '/admin/releases', label: 'Releases', icon: Disc3 },
+    { href: '/admin/tracks', label: 'Tracks', icon: Music },
     { href: '/admin/events', label: 'Events', icon: Calendar },
     {
         href: '/admin/blog',

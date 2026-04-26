@@ -17,12 +17,12 @@ function authHeaders(): HeadersInit {
     return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-async function handleResponse<T>(res: Response): Promise<T> {
+async function handleResponse<T>(res: Response, redirectOn401 = false): Promise<T> {
     if (res.status === 401) {
-        if (typeof window !== 'undefined') {
+        if (redirectOn401 && typeof window !== 'undefined') {
             window.location.href = '/admin/login';
         }
-        throw new Error('Unauthorized');
+        throw new Error('Session expired. Please log in again.');
     }
     if (!res.ok) {
         let msg = `HTTP ${res.status}`;
@@ -121,7 +121,7 @@ export async function adminCreateTrack(data: Record<string, unknown>) {
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify(data),
     });
-    return handleResponse<unknown>(res);
+    return handleResponse<unknown>(res, false);
 }
 
 export async function adminUpdateTrack(id: number, data: Record<string, unknown>) {
@@ -130,7 +130,7 @@ export async function adminUpdateTrack(id: number, data: Record<string, unknown>
         headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify(data),
     });
-    return handleResponse<unknown>(res);
+    return handleResponse<unknown>(res, false);
 }
 
 export async function adminDeleteTrack(id: number) {
@@ -138,7 +138,16 @@ export async function adminDeleteTrack(id: number) {
         method: 'DELETE',
         headers: authHeaders(),
     });
-    return handleResponse<{ success: boolean }>(res);
+    return handleResponse<{ success: boolean }>(res, false);
+}
+
+export async function adminGetTracks(params?: { standalone?: boolean; artist_id?: number }): Promise<unknown[]> {
+    const query = new URLSearchParams();
+    if (params?.standalone) query.set('standalone', 'true');
+    if (params?.artist_id != null) query.set('artist_id', String(params.artist_id));
+    const qs = query.toString() ? `?${query.toString()}` : '';
+    const res = await fetch(`${API_URL}/api/tracks${qs}`, { headers: authHeaders() });
+    return handleResponse<unknown[]>(res);
 }
 
 // ─── Events ───────────────────────────────────────────────────────────────────

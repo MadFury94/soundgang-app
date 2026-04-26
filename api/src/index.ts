@@ -174,12 +174,33 @@ export default {
 
             // ── GET /api/tracks ─────────────────────────────────────────────────────
             if (request.method === 'GET' && path === '/api/tracks') {
-                const { results } = await env.DB.prepare(
-                    `SELECT t.*, r.title as release_title, r.cover_url, r.artist
-           FROM tracks t
-           JOIN releases r ON t.release_id = r.id
-           ORDER BY r.release_date DESC, t.track_number ASC`
-                ).all();
+                const standaloneParam = url.searchParams.get('standalone');
+                const artistIdParam = url.searchParams.get('artist_id');
+
+                const conditions: string[] = [];
+                const params: unknown[] = [];
+
+                if (standaloneParam === 'true') {
+                    conditions.push('t.is_standalone = 1');
+                }
+                if (artistIdParam) {
+                    conditions.push('t.artist_id = ?');
+                    params.push(parseInt(artistIdParam));
+                }
+
+                let query = `SELECT t.*,
+                       a.name as artist_name,
+                       r.title as release_title,
+                       r.cover_url,
+                       r.artist as release_artist
+                FROM tracks t
+                LEFT JOIN artists a ON t.artist_id = a.id
+                LEFT JOIN releases r ON t.release_id = r.id`;
+
+                if (conditions.length) query += ' WHERE ' + conditions.join(' AND ');
+                query += ' ORDER BY t.created_at DESC';
+
+                const { results } = await env.DB.prepare(query).bind(...params).all();
                 return json(results.map(formatTrack), 200, origin);
             }
 
@@ -258,7 +279,7 @@ export default {
 
             // ── POST /api/upload/audio ──────────────────────────────────────────────
             if (request.method === 'POST' && path === '/api/upload/audio') {
-                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                await requireAuth(request, env);
 
                 const formData = await request.formData();
                 const file = formData.get('file') as File | null;
@@ -277,7 +298,7 @@ export default {
 
             // ── POST /api/upload/image ──────────────────────────────────────────────
             if (request.method === 'POST' && path === '/api/upload/image') {
-                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                await requireAuth(request, env);
 
                 const formData = await request.formData();
                 const file = formData.get('file') as File | null;
@@ -424,7 +445,7 @@ export default {
 
             // ── POST /api/artists ────────────────────────────────────────────────────
             if (request.method === 'POST' && path === '/api/artists') {
-                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                await requireAdmin(request, env);
                 const body = await request.json() as Record<string, unknown>;
                 if (!body.name || !body.slug) return error('name and slug are required', 400, origin);
                 try {
@@ -451,7 +472,7 @@ export default {
             // ── PUT /api/artists/:id ─────────────────────────────────────────────────
             const artistIdMatch = path.match(/^\/api\/artists\/(\d+)$/);
             if (request.method === 'PUT' && artistIdMatch) {
-                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                await requireAdmin(request, env);
                 const id = artistIdMatch[1];
                 const body = await request.json() as Record<string, unknown>;
                 await env.DB.prepare(
@@ -484,7 +505,7 @@ export default {
 
             // ── DELETE /api/artists/:id ──────────────────────────────────────────────
             if (request.method === 'DELETE' && artistIdMatch) {
-                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                await requireAdmin(request, env);
                 const id = artistIdMatch[1];
                 await env.DB.prepare('DELETE FROM artists WHERE id = ?').bind(id).run();
                 return json({ success: true }, 200, origin);
@@ -590,13 +611,35 @@ export default {
 
             // ── POST /api/tracks ─────────────────────────────────────────────────────
             if (request.method === 'POST' && path === '/api/tracks') {
-                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const user = await requireAuth(request, env);
                 const body = await request.json() as Record<string, unknown>;
-                if (!body.release_id || !body.title) return error('release_id and title are required', 400, origin);
+
+                if (!body.title || !body.audio_url) return error('title and audio_url are required', 400, origin);
+
+                const bodyArtistId = body.artist_id != null ? (body.artist_id as number) : null;
+                const bodyReleaseId = body.release_id != null ? (body.release_id as number) : null;
+
+                // Artist users can only create tracks for themselves
+                if (user.role === 'artist' && bodyArtistId !== user.artist_id) {
+                    return error('Forbidden', 403, origin);
+                }
+
+                // Validate artist_id FK if provided
+                if (bodyArtistId != null) {
+                    const artist = await env.DB.prepare('SELECT id FROM artists WHERE id = ?').bind(bodyArtistId).first();
+                    if (!artist) return error('Artist not found', 404, origin);
+                }
+
+                // Validate release_id FK if provided
+                if (bodyReleaseId != null) {
+                    const release = await env.DB.prepare('SELECT id FROM releases WHERE id = ?').bind(bodyReleaseId).first();
+                    if (!release) return error('Release not found', 404, origin);
+                }
+
                 const result = await env.DB.prepare(
-                    `INSERT INTO tracks (release_id, title, duration, audio_url, featuring, track_number)
-                     VALUES (?, ?, ?, ?, ?, ?)`
-                ).bind(body.release_id, body.title, body.duration ?? '0:00', body.audio_url ?? '', body.featuring ?? '', body.track_number ?? 1).run();
+                    `INSERT INTO tracks (title, duration, audio_url, featuring, track_number, artist_id, is_standalone)
+                     VALUES (?, ?, ?, ?, ?, ?, 1)`
+                ).bind(body.title, body.duration ?? '0:00', body.audio_url, body.featuring ?? '', body.track_number ?? 1, bodyArtistId).run();
                 const created = await env.DB.prepare('SELECT * FROM tracks WHERE id = ?').bind(result.meta.last_row_id).first();
                 return json(formatTrack(created as Record<string, unknown>), 201, origin);
             }
@@ -604,21 +647,32 @@ export default {
             // ── PUT /api/tracks/:id ──────────────────────────────────────────────────
             const trackIdMatch = path.match(/^\/api\/tracks\/(\d+)$/);
             if (request.method === 'PUT' && trackIdMatch) {
-                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const user = await requireAuth(request, env);
                 const id = trackIdMatch[1];
+                const existingTrack = await env.DB.prepare('SELECT * FROM tracks WHERE id = ?').bind(id).first() as Record<string, unknown> | null;
+                if (!existingTrack) return error('Track not found', 404, origin);
+                if (!requireOwnership(user, existingTrack.artist_id as number | null)) return error('Forbidden', 403, origin);
                 const body = await request.json() as Record<string, unknown>;
+                const title = (body.title as string | undefined) ?? (existingTrack.title as string);
+                const duration = (body.duration as string | undefined) ?? (existingTrack.duration as string) ?? '0:00';
+                const audio_url = (body.audio_url as string | undefined) ?? (existingTrack.audio_url as string) ?? '';
+                const featuring = (body.featuring as string | undefined) ?? (existingTrack.featuring as string) ?? '';
+                const artist_id = 'artist_id' in body ? (body.artist_id as number | null) : (existingTrack.artist_id as number | null);
+                const release_id = 'release_id' in body ? (body.release_id as number | null) : (existingTrack.release_id as number | null);
                 await env.DB.prepare(
-                    `UPDATE tracks SET title=?, duration=?, audio_url=?, featuring=?, track_number=? WHERE id=?`
-                ).bind(body.title, body.duration ?? '0:00', body.audio_url ?? '', body.featuring ?? '', body.track_number ?? 1, id).run();
+                    `UPDATE tracks SET title=?, duration=?, audio_url=?, featuring=?, artist_id=?, release_id=? WHERE id=?`
+                ).bind(title, duration, audio_url, featuring, artist_id, release_id, id).run();
                 const updated = await env.DB.prepare('SELECT * FROM tracks WHERE id = ?').bind(id).first();
-                if (!updated) return error('Track not found', 404, origin);
                 return json(formatTrack(updated as Record<string, unknown>), 200, origin);
             }
 
             // ── DELETE /api/tracks/:id ───────────────────────────────────────────────
             if (request.method === 'DELETE' && trackIdMatch) {
-                if (!isAdmin(request, env)) return error('Unauthorized', 401, origin);
+                const user = await requireAuth(request, env);
                 const id = trackIdMatch[1];
+                const existingTrack = await env.DB.prepare('SELECT * FROM tracks WHERE id = ?').bind(id).first() as Record<string, unknown> | null;
+                if (!existingTrack) return error('Track not found', 404, origin);
+                if (!requireOwnership(user, existingTrack.artist_id as number | null)) return error('Forbidden', 403, origin);
                 await env.DB.prepare('DELETE FROM tracks WHERE id = ?').bind(id).run();
                 return json({ success: true }, 200, origin);
             }
@@ -994,8 +1048,11 @@ function formatTrack(r: Record<string, unknown>) {
         audioUrl: r.audio_url,
         featuring: r.featuring || undefined,
         trackNumber: r.track_number,
-        releaseId: r.release_id,
+        releaseId: r.release_id ?? null,
+        isStandalone: r.is_standalone === 1,
+        artistId: r.artist_id ?? null,
         // Joined fields (present when fetched via /api/tracks)
+        artistName: r.artist_name || undefined,
         releaseTitle: r.release_title || undefined,
         coverImage: r.cover_url || undefined,
         artist: r.artist || undefined,

@@ -1,6 +1,5 @@
 ﻿'use client';
 export const dynamic = 'force-dynamic';
-export const runtime = 'edge';
 
 import { useState, useRef } from 'react';
 import { Upload, Link as LinkIcon, Music, Image as ImageIcon, CheckCircle, AlertCircle, Loader2, Copy } from 'lucide-react';

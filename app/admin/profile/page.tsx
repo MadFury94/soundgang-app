@@ -1,6 +1,5 @@
 ﻿'use client';
 export const dynamic = 'force-dynamic';
-export const runtime = 'edge';
 
 import { useState, useEffect } from 'react';
 import { User, Mail, Lock, Save, CheckCircle, Eye, EyeOff } from 'lucide-react';
