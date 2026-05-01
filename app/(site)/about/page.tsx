@@ -3,6 +3,8 @@ import { Music, Users, Calendar, Award, Target, Heart } from 'lucide-react';
 import Link from 'next/link';
 import { buildMetadata } from '@/lib/seo';
 
+export const runtime = 'edge';
+
 export const metadata = buildMetadata({
     title: 'About Us',
     description: 'SoundGang is Nigeria\'s premier record label, dedicated to discovering and amplifying the brightest talents in contemporary African music.',

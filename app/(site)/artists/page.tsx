@@ -4,13 +4,13 @@ import { Music2 } from 'lucide-react';
 import { getArtists } from '@/lib/api';
 import { buildMetadata } from '@/lib/seo';
 
+export const runtime = 'edge';
+
 export const metadata = buildMetadata({
     title: 'Our Artists',
     description: 'Meet the voices shaping contemporary African music. Discover Multilord, Kirko Drillz, Killa Vybz and more SoundGang artists.',
     url: 'https://soundgang.ng/artists',
 });
-
-export const revalidate = 60; // Revalidate every 60 seconds
 
 export default async function ArtistsPage() {
     const artists = await getArtists();
