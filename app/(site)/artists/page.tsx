@@ -10,8 +10,6 @@ export const metadata = buildMetadata({
     url: 'https://soundgang.ng/artists',
 });
 
-export const revalidate = 60; // Revalidate every 60 seconds
-
 export default async function ArtistsPage() {
     const artists = await getArtists();
 
