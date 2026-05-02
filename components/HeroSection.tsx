@@ -23,7 +23,7 @@ export default function HeroSection() {
                             <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold mb-6 leading-tight">
                                 Crafting <span className="text-[#8B9D7F]">Sound</span>
                                 <br />
-                                Culture
+                                Culture.
                             </h1>
 
                             <p className="text-gray-300 text-lg mb-8 max-w-lg leading-relaxed">
