@@ -6,7 +6,6 @@ import VideosGallerySectionWrapper from "@/components/VideosGallerySectionWrappe
 import { PlayerProvider } from "@/lib/player-context";
 import MusicPlayer from "@/components/player/MusicPlayer";
 
-export const runtime = 'edge';
 
 // Public site layout — wraps all non-admin pages with Header, Footer, Player
 export default function SiteLayout({

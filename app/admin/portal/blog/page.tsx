@@ -1,6 +1,5 @@
-﻿'use client';
+'use client';
 export const dynamic = 'force-dynamic';
-export const runtime = 'edge';
 
 import { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, ExternalLink } from 'lucide-react';
@@ -126,7 +125,7 @@ export default function PortalBlogPage() {
             label: 'Published',
             render: (row: BlogPost) => (
                 <span className="text-gray-400 text-sm">
-                    {row.publishedAt ? new Date(row.publishedAt).toLocaleDateString() : '—'}
+                    {row.publishedAt ? new Date(row.publishedAt).toLocaleDateString() : '�'}
                 </span>
             ),
         },

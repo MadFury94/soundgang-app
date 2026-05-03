@@ -4,7 +4,6 @@ import { Calendar, User, ArrowRight } from 'lucide-react';
 import { getLatestPosts, blogCategories } from '@/lib/data/blog';
 import { buildMetadata } from '@/lib/seo';
 
-export const runtime = 'edge';
 
 export const metadata = buildMetadata({
     title: 'Blog',

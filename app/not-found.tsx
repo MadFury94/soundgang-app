@@ -2,7 +2,6 @@ import Link from 'next/link';
 
 // Required for Cloudflare Pages compatibility — prevents Next.js from generating
 // a Node.js runtime not-found function when the root layout has server-side logic.
-export const runtime = 'edge';
 
 export default function NotFound() {
     return (

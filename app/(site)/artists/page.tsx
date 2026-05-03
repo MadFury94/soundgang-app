@@ -4,7 +4,6 @@ import { Music2 } from 'lucide-react';
 import { getArtists } from '@/lib/api';
 import { buildMetadata } from '@/lib/seo';
 
-export const runtime = 'edge';
 
 export const metadata = buildMetadata({
     title: 'Our Artists',

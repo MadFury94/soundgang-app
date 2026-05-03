@@ -1,6 +1,5 @@
-ï»¿'use client';
+'use client';
 export const dynamic = 'force-dynamic';
-export const runtime = 'edge';
 
 import { useEffect, useState } from 'react';
 import { Mic2, Disc3, Calendar, FileText, Video, Plus } from 'lucide-react';
@@ -157,7 +156,7 @@ export default function DashboardPage() {
                                     </div>
                                     <div className="min-w-0">
                                         <p className="text-white text-sm font-medium truncate">{r.title}</p>
-                                        <p className="text-gray-400 text-xs">{r.artist} Â· {r.type}</p>
+                                        <p className="text-gray-400 text-xs">{r.artist} · {r.type}</p>
                                     </div>
                                 </div>
                             ))}
@@ -189,7 +188,7 @@ export default function DashboardPage() {
                                     </div>
                                     <div className="min-w-0">
                                         <p className="text-white text-sm font-medium truncate">{e.title}</p>
-                                        <p className="text-gray-400 text-xs">{e.venue} Â· {e.date}</p>
+                                        <p className="text-gray-400 text-xs">{e.venue} · {e.date}</p>
                                     </div>
                                 </div>
                             ))}

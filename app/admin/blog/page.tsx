@@ -1,6 +1,5 @@
-ï»¿'use client';
+'use client';
 export const dynamic = 'force-dynamic';
-export const runtime = 'edge';
 
 import { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, ExternalLink } from 'lucide-react';
@@ -58,7 +57,7 @@ export default function BlogPage() {
         {
             key: 'publishedAt', label: 'Published', render: (row: BlogPost) => (
                 <span className="text-gray-400 text-sm">
-                    {row.publishedAt ? new Date(row.publishedAt).toLocaleDateString() : 'â€”'}
+                    {row.publishedAt ? new Date(row.publishedAt).toLocaleDateString() : '—'}
                 </span>
             )
         },
@@ -72,7 +71,7 @@ export default function BlogPage() {
         {
             key: 'actions', label: 'Actions', render: (row: BlogPost) => (
                 <div className="flex gap-2">
-                    {/* Edit â€” opens full Editor.js page */}
+                    {/* Edit — opens full Editor.js page */}
                     <Link
                         href={`/admin/blog/${row.id}/edit`}
                         className="p-1.5 rounded text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"

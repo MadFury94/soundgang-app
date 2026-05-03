@@ -4,7 +4,6 @@ import LatestReleasesSection from '@/components/LatestReleasesSection';
 import StreamingPlatformsSection from '@/components/StreamingPlatformsSection';
 import { buildMetadata, buildOrganizationJsonLd } from '@/lib/seo';
 
-export const runtime = 'edge';
 
 export const metadata = buildMetadata();
 

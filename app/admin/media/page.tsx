@@ -1,6 +1,5 @@
-ï»¿'use client';
+'use client';
 export const dynamic = 'force-dynamic';
-export const runtime = 'edge';
 
 import { useState, useRef } from 'react';
 import { Upload, Link as LinkIcon, Music, Image as ImageIcon, CheckCircle, AlertCircle, Loader2, Copy } from 'lucide-react';
@@ -131,7 +130,7 @@ export default function MediaLibraryPage() {
                     <div className="space-y-3">
                         <div>
                             <label className="block text-xs text-gray-400 mb-1">
-                                Custom filename key (optional â€” auto-generated if blank)
+                                Custom filename key (optional — auto-generated if blank)
                             </label>
                             <input
                                 type="text"
@@ -161,7 +160,7 @@ export default function MediaLibraryPage() {
                                     {activeTab === 'audio' ? <Music className="w-8 h-8" /> : <ImageIcon className="w-8 h-8" />}
                                     <span className="text-sm">Click to select {activeTab === 'audio' ? 'audio file' : 'image'}</span>
                                     <span className="text-xs text-gray-500">
-                                        {activeTab === 'audio' ? 'MP3, WAV, AAC, FLAC' : 'JPG, PNG, WebP, GIF â€” max 5MB'}
+                                        {activeTab === 'audio' ? 'MP3, WAV, AAC, FLAC' : 'JPG, PNG, WebP, GIF — max 5MB'}
                                     </span>
                                 </div>
                             )}

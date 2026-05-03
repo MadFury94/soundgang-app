@@ -1,6 +1,5 @@
-ï»¿'use client';
+'use client';
 export const dynamic = 'force-dynamic';
-export const runtime = 'edge';
 
 import { useState, useEffect, useRef } from 'react';
 import { ListMusic, Music, CheckCircle, GripVertical, Trash2, Plus } from 'lucide-react';
@@ -131,7 +130,7 @@ export default function PlayerPlaylistPage() {
                     <h2 className="text-white font-semibold flex items-center gap-2">
                         <Music className="w-4 h-4" style={{ color: '#8B9D7F' }} />
                         All Tracks
-                        <span className="text-gray-500 text-xs font-normal ml-1">â€” click to add/remove</span>
+                        <span className="text-gray-500 text-xs font-normal ml-1">— click to add/remove</span>
                     </h2>
 
                     {loading ? (
@@ -169,7 +168,7 @@ export default function PlayerPlaylistPage() {
                                                         ? <span className="text-[#8B9D7F]/70">Standalone</span>
                                                         : track.releaseTitle
                                                     }
-                                                    {track.artist ? ` Â· ${track.artist}` : ''}
+                                                    {track.artist ? ` · ${track.artist}` : ''}
                                                 </p>
                                             </div>
                                             {inPlaylist
