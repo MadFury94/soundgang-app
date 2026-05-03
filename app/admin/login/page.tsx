@@ -3,7 +3,6 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'edge';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';

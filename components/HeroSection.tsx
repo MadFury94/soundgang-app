@@ -27,7 +27,7 @@ export default function HeroSection() {
                             </h1>
 
                             <p className="text-gray-300 text-lg mb-8 max-w-lg leading-relaxed">
-                                SoundGang is Nigeria's premier record label, discovering and amplifying the brightest talents in contemporary African music.
+                                SoundGang is Nigeria&apos;s premier record label, discovering and amplifying the brightest talents in contemporary African music.
                             </p>
 
                             <div className="flex flex-wrap gap-4 mb-12">
