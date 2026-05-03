@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Play } from 'lucide-react';
-import WaveDivider from './WaveDivider';
+// import WaveDivider from './WaveDivider'; // Not used in this component
 
 export default function HeroSection() {
     return (

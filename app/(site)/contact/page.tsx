@@ -52,11 +52,11 @@ export default function ContactPage() {
                         {/* Contact Information */}
                         <div>
                             <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">
-                                Let's Connect
+                                Let&apos;s Connect
                             </h2>
                             <p className="text-gray-400 text-lg mb-12">
-                                Whether you're an artist looking to work with us, a fan with questions,
-                                or a partner interested in collaboration, we'd love to hear from you.
+                                Whether you&apos;re an artist looking to work with us, a fan with questions,
+                                or a partner interested in collaboration, we&apos;d love to hear from you.
                             </p>
 
                             {/* Contact Cards */}
@@ -127,7 +127,7 @@ export default function ContactPage() {
                             {submitStatus === 'success' && (
                                 <div className="mb-6 p-4 rounded-lg bg-green-500/10 border border-green-500/20">
                                     <p className="text-green-400 text-sm">
-                                        Thank you for your message! We'll get back to you soon.
+                                        Thank you for your message! We&apos;ll get back to you soon.
                                     </p>
                                 </div>
                             )}

@@ -89,13 +89,13 @@ export default function AboutPage() {
 
                     <div className="space-y-6 text-lg text-gray-300 leading-relaxed">
                         <p>
-                            SoundGang is a music company founded in 2001 and based in Lagos, Nigeria. We're an artist management company, a record label, a booking agency, a concert producer and a promotion & publicity agency.
+                            SoundGang is a music company founded in 2001 and based in Lagos, Nigeria. We&apos;re an artist management company, a record label, a booking agency, a concert producer and a promotion & publicity agency.
                         </p>
                         <p>
                             A talent-studded & fast rising music & entertainment company, widely dubbed as the future of the music & entertainment industry.
                         </p>
                         <p className="text-[#8B9D7F] italic text-xl">
-                            "It's so cool to pick up the guitar and create something that didn't exist 5 minutes ago. You can write something that no ones ever heard before. It's music at your fingertips."
+                            &quot;It&apos;s so cool to pick up the guitar and create something that didn&apos;t exist 5 minutes ago. You can write something that no one&apos;s ever heard before. It&apos;s music at your fingertips.&quot;
                         </p>
                     </div>
                 </div>
@@ -194,7 +194,7 @@ export default function AboutPage() {
                         Ready to Join the Movement?
                     </h2>
                     <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
-                        Whether you're an artist looking for representation or a fan wanting to stay connected, we'd love to hear from you.
+                        Whether you&apos;re an artist looking for representation or a fan wanting to stay connected, we&apos;d love to hear from you.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Link

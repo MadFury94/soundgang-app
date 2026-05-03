@@ -23,7 +23,7 @@ export default function AdminLoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const router = useRouter();
+    // const router = useRouter(); // Not used in this component
     const { login } = useAuth();
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
