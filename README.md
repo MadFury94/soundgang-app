@@ -2,7 +2,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Deployment
 
-This app is deployed to Cloudflare Workers using OpenNext.
+This app is deployed to Cloudflare Workers using OpenNext with nodejs_compat_v2.
 
 ## Getting Started
 

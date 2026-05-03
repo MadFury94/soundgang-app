@@ -2,7 +2,7 @@
 main = ".open-next/worker.js"
 name = "soundgang-app"
 compatibility_date = "2024-09-23"
-compatibility_flags = ["nodejs_compat"]
+compatibility_flags = ["nodejs_compat_v2"]
 
 [vars]
 NEXT_PUBLIC_API_URL = "https://soundgang-api.onochieazukaeme.workers.dev"
