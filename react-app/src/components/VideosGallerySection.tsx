@@ -82,8 +82,8 @@ export default function VideosGallerySection({ videos }: { videos: Video[] }) {
                             </div>
 
                             <div className="mt-6">
-                                <h3 className="text-2xl font-bold mb-2">{selectedVideo.title}</h3>
-                                <p className="text-gray-400">{selectedVideo.artist} • {selectedVideo.date}</p>
+                                <h3 className="text-2xl font-bold mb-2">{currentVideo.title}</h3>
+                                <p className="text-gray-400">{currentVideo.artist} • {currentVideo.date}</p>
                             </div>
                         </div>
                     </div>
