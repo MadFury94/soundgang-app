@@ -6,7 +6,13 @@ import WaveDivider from './WaveDivider';
 import type { Video } from '@/lib/data/videos';
 
 export default function VideosGallerySection({ videos }: { videos: Video[] }) {
-    const [selectedVideo, setSelectedVideo] = useState<Video>(videos[0]);
+    const [selectedVideo, setSelectedVideo] = useState<Video | null>(videos[0] || null);
+
+    if (!videos || videos.length === 0) {
+        return null;
+    }
+
+    const currentVideo = selectedVideo || videos[0];
 
     return (
         <section className="bg-black text-white">
@@ -27,7 +33,7 @@ export default function VideosGallerySection({ videos }: { videos: Video[] }) {
                                     <button
                                         key={video.id}
                                         onClick={() => setSelectedVideo(video)}
-                                        className={`w-full text-left p-4 rounded-lg border transition-all ${selectedVideo.id === video.id
+                                        className={`w-full text-left p-4 rounded-lg border transition-all ${currentVideo.id === video.id
                                             ? 'bg-[#8B9D7F]/10 border-[#8B9D7F]'
                                             : 'bg-[#1a1a1a] border-gray-800 hover:border-[#8B9D7F]'
                                             }`}
@@ -58,16 +64,16 @@ export default function VideosGallerySection({ videos }: { videos: Video[] }) {
                                             <span className="text-black font-bold text-sm">SG</span>
                                         </div>
                                         <div>
-                                            <h3 className="font-bold">{selectedVideo.title}</h3>
-                                            <p className="text-sm text-gray-400">{selectedVideo.artist}</p>
+                                            <h3 className="font-bold">{currentVideo.title}</h3>
+                                            <p className="text-sm text-gray-400">{currentVideo.artist}</p>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="relative aspect-video bg-black">
                                     <iframe
-                                        src={`https://www.youtube.com/embed/${selectedVideo.youtubeId}`}
-                                        title={selectedVideo.title}
+                                        src={`https://www.youtube.com/embed/${currentVideo.youtubeId}`}
+                                        title={currentVideo.title}
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                         allowFullScreen
                                         className="absolute inset-0 w-full h-full"
