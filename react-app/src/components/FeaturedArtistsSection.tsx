@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import WaveDivider from './WaveDivider';
 import { getFeaturedArtists } from '@/lib/api';

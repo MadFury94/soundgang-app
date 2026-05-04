@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { Calendar, MapPin, ArrowRight } from 'lucide-react';
 import WaveDivider from './WaveDivider';
 import { getUpcomingEvents } from '@/lib/api';

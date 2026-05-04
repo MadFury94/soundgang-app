@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { Play } from 'lucide-react';
 // import WaveDivider from './WaveDivider'; // Not used in this component
 

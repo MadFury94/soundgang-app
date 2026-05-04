@@ -1,5 +1,5 @@
-import Link from 'next/link';
-import Image from 'next/image';
+import { Link } from 'react-router-dom';
+;
 
 export default function Footer() {
     return (
@@ -27,22 +27,22 @@ export default function Footer() {
                         <h3 className="font-semibold text-lg text-white mb-4">Main Pages</h3>
                         <ul className="space-y-2 sm:space-y-3">
                             <li>
-                                <Link href="/" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
+                                <Link to="/" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
                                     Home
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/artists" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
+                                <Link to="/artists" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
                                     Artists
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/releases" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
+                                <Link to="/releases" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
                                     Releases
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/about" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
+                                <Link to="/about" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
                                     About Us
                                 </Link>
                             </li>
@@ -54,22 +54,22 @@ export default function Footer() {
                         <h3 className="font-semibold text-lg text-white mb-4">Content</h3>
                         <ul className="space-y-2 sm:space-y-3">
                             <li>
-                                <Link href="/blog" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
+                                <Link to="/blog" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
                                     Blog
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/events" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
+                                <Link to="/events" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
                                     Events
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/news" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
+                                <Link to="/news" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
                                     News
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/gallery" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
+                                <Link to="/gallery" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
                                     Gallery
                                 </Link>
                             </li>
@@ -81,22 +81,22 @@ export default function Footer() {
                         <h3 className="font-semibold text-lg text-white mb-4">Resources</h3>
                         <ul className="space-y-2 sm:space-y-3">
                             <li>
-                                <Link href="/contact" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
+                                <Link to="/contact" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
                                     Contact
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/submit" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
+                                <Link to="/submit" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
                                     Submit Music
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/faqs" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
+                                <Link to="/faqs" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
                                     FAQs
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/careers" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
+                                <Link to="/careers" className="text-gray-400 hover:text-[#8B9D7F] text-sm sm:text-base transition-colors">
                                     Careers
                                 </Link>
                             </li>
@@ -153,10 +153,10 @@ export default function Footer() {
                     {/* Legal Links */}
                     <div className="flex flex-col md:flex-row items-center gap-4 text-sm text-gray-400">
                         <span>Legal</span>
-                        <Link href="/privacy" className="hover:text-[#8B9D7F] transition-colors">
+                        <Link to="/privacy" className="hover:text-[#8B9D7F] transition-colors">
                             Privacy Policy
                         </Link>
-                        <Link href="/terms" className="hover:text-[#8B9D7F] transition-colors">
+                        <Link to="/terms" className="hover:text-[#8B9D7F] transition-colors">
                             Terms of Service
                         </Link>
                     </div>

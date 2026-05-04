@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { ArrowRight, Play, Pause, Music } from 'lucide-react';
 import WaveDivider from './WaveDivider';
 import { getLatestReleases } from '@/lib/api';
