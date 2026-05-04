@@ -1,252 +1,167 @@
 'use client';
 // =============================================================================
-// Admin API Client
-// Reads token from sessionStorage. Sends Authorization: Bearer <token>.
-// On 401, redirects to /admin/login.
+// Admin API Client - Static Data Mode
+// Uses local JSON data stores only (no API calls)
 // =============================================================================
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://soundgang-api.onochieazukaeme.workers.dev';
+import { artists } from '@/lib/data/artists';
+import { releases, getAllTracks } from '@/lib/data/releases';
+import { events } from '@/lib/data/events';
+import { blogPosts } from '@/lib/data/blog';
+import { videos } from '@/lib/data/videos';
+
+// Mock authentication
+const MOCK_ADMIN_EMAIL = 'admin@soundgang.com';
+const MOCK_ADMIN_PASSWORD = 'admin123';
 
 function getToken(): string | null {
     if (typeof window === 'undefined') return null;
     return localStorage.getItem('sg_auth_token');
 }
 
-function authHeaders(): HeadersInit {
-    const token = getToken();
-    return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
-async function handleResponse<T>(res: Response, redirectOn401 = false): Promise<T> {
-    if (res.status === 401) {
-        if (redirectOn401 && typeof window !== 'undefined') {
-            window.location.href = '/admin/login';
-        }
-        throw new Error('Session expired. Please log in again.');
-    }
-    if (!res.ok) {
-        let msg = `HTTP ${res.status}`;
-        try {
-            const body = await res.json() as { error?: string };
-            if (body.error) msg = body.error;
-        } catch { /* ignore */ }
-        throw new Error(msg);
-    }
-    return res.json() as Promise<T>;
-}
-
 // ─── Artists ──────────────────────────────────────────────────────────────────
 
 export async function adminGetArtists() {
-    const res = await fetch(`${API_URL}/api/artists`, { headers: authHeaders() });
-    return handleResponse<unknown[]>(res);
+    return Promise.resolve(artists);
 }
 
 export async function adminGetArtistById(id: number): Promise<unknown> {
-    const artists = await adminGetArtists();
-    const found = (artists as Record<string, unknown>[]).find((a) => Number(a.id) === id);
+    const found = artists.find((a) => a.id === id);
     if (!found) throw new Error('404');
-    return found;
+    return Promise.resolve(found);
 }
 
 export async function adminCreateArtist(data: Record<string, unknown>) {
-    const res = await fetch(`${API_URL}/api/artists`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify(data),
-    });
-    return handleResponse<unknown>(res);
+    console.log('[Mock] Create artist:', data);
+    return Promise.resolve({ ...data, id: Date.now() });
 }
 
 export async function adminUpdateArtist(id: number, data: Record<string, unknown>) {
-    const res = await fetch(`${API_URL}/api/artists/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify(data),
-    });
-    return handleResponse<unknown>(res);
+    console.log('[Mock] Update artist:', id, data);
+    return Promise.resolve({ ...data, id });
 }
 
 export async function adminDeleteArtist(id: number) {
-    const res = await fetch(`${API_URL}/api/artists/${id}`, {
-        method: 'DELETE',
-        headers: authHeaders(),
-    });
-    return handleResponse<{ success: boolean }>(res);
+    console.log('[Mock] Delete artist:', id);
+    return Promise.resolve({ success: true });
 }
 
 // ─── Releases ─────────────────────────────────────────────────────────────────
 
 export async function adminGetReleases() {
-    const res = await fetch(`${API_URL}/api/releases`, { headers: authHeaders() });
-    return handleResponse<unknown[]>(res);
+    return Promise.resolve(releases);
 }
 
 export async function adminGetRelease(id: number): Promise<unknown> {
-    const res = await fetch(`${API_URL}/api/releases/${id}`, { headers: authHeaders() });
-    return handleResponse<unknown>(res);
+    const found = releases.find((r) => r.id === id);
+    if (!found) throw new Error('404');
+    return Promise.resolve(found);
 }
 
 export async function adminCreateRelease(data: Record<string, unknown>) {
-    const res = await fetch(`${API_URL}/api/releases`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify(data),
-    });
-    return handleResponse<unknown>(res);
+    console.log('[Mock] Create release:', data);
+    return Promise.resolve({ ...data, id: Date.now() });
 }
 
 export async function adminUpdateRelease(id: number, data: Record<string, unknown>) {
-    const res = await fetch(`${API_URL}/api/releases/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify(data),
-    });
-    return handleResponse<unknown>(res);
+    console.log('[Mock] Update release:', id, data);
+    return Promise.resolve({ ...data, id });
 }
 
 export async function adminDeleteRelease(id: number) {
-    const res = await fetch(`${API_URL}/api/releases/${id}`, {
-        method: 'DELETE',
-        headers: authHeaders(),
-    });
-    return handleResponse<{ success: boolean }>(res);
+    console.log('[Mock] Delete release:', id);
+    return Promise.resolve({ success: true });
 }
 
 // ─── Tracks ───────────────────────────────────────────────────────────────────
 
 export async function adminCreateTrack(data: Record<string, unknown>) {
-    const res = await fetch(`${API_URL}/api/tracks`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify(data),
-    });
-    return handleResponse<unknown>(res, false);
+    console.log('[Mock] Create track:', data);
+    return Promise.resolve({ ...data, id: Date.now() });
 }
 
 export async function adminUpdateTrack(id: number, data: Record<string, unknown>) {
-    const res = await fetch(`${API_URL}/api/tracks/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify(data),
-    });
-    return handleResponse<unknown>(res, false);
+    console.log('[Mock] Update track:', id, data);
+    return Promise.resolve({ ...data, id });
 }
 
 export async function adminDeleteTrack(id: number) {
-    const res = await fetch(`${API_URL}/api/tracks/${id}`, {
-        method: 'DELETE',
-        headers: authHeaders(),
-    });
-    return handleResponse<{ success: boolean }>(res, false);
+    console.log('[Mock] Delete track:', id);
+    return Promise.resolve({ success: true });
 }
 
 export async function adminGetTracks(params?: { standalone?: boolean; artist_id?: number }): Promise<unknown[]> {
-    const query = new URLSearchParams();
-    if (params?.standalone) query.set('standalone', 'true');
-    if (params?.artist_id != null) query.set('artist_id', String(params.artist_id));
-    const qs = query.toString() ? `?${query.toString()}` : '';
-    const res = await fetch(`${API_URL}/api/tracks${qs}`, { headers: authHeaders() });
-    return handleResponse<unknown[]>(res);
+    let tracks = getAllTracks();
+    if (params?.standalone) {
+        tracks = tracks.filter((t) => t.isStandalone);
+    }
+    if (params?.artist_id != null) {
+        tracks = tracks.filter((t) => t.artistId === params.artist_id);
+    }
+    return Promise.resolve(tracks);
 }
 
 // ─── Events ───────────────────────────────────────────────────────────────────
 
 export async function adminGetEvents() {
-    const res = await fetch(`${API_URL}/api/events`, { headers: authHeaders() });
-    return handleResponse<unknown[]>(res);
+    return Promise.resolve(events);
 }
 
 export async function adminCreateEvent(data: Record<string, unknown>) {
-    const res = await fetch(`${API_URL}/api/events`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify(data),
-    });
-    return handleResponse<unknown>(res);
+    console.log('[Mock] Create event:', data);
+    return Promise.resolve({ ...data, id: Date.now() });
 }
 
 export async function adminUpdateEvent(id: number, data: Record<string, unknown>) {
-    const res = await fetch(`${API_URL}/api/events/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify(data),
-    });
-    return handleResponse<unknown>(res);
+    console.log('[Mock] Update event:', id, data);
+    return Promise.resolve({ ...data, id });
 }
 
 export async function adminDeleteEvent(id: number) {
-    const res = await fetch(`${API_URL}/api/events/${id}`, {
-        method: 'DELETE',
-        headers: authHeaders(),
-    });
-    return handleResponse<{ success: boolean }>(res);
+    console.log('[Mock] Delete event:', id);
+    return Promise.resolve({ success: true });
 }
 
 // ─── Blog ─────────────────────────────────────────────────────────────────────
 
 export async function adminGetBlogPosts() {
-    const res = await fetch(`${API_URL}/api/blog`, { headers: authHeaders() });
-    return handleResponse<unknown[]>(res);
+    return Promise.resolve(blogPosts);
 }
 
 export async function adminCreateBlogPost(data: Record<string, unknown>) {
-    const res = await fetch(`${API_URL}/api/blog`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify(data),
-    });
-    return handleResponse<unknown>(res);
+    console.log('[Mock] Create blog post:', data);
+    return Promise.resolve({ ...data, id: Date.now() });
 }
 
 export async function adminUpdateBlogPost(id: number, data: Record<string, unknown>) {
-    const res = await fetch(`${API_URL}/api/blog/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify(data),
-    });
-    return handleResponse<unknown>(res);
+    console.log('[Mock] Update blog post:', id, data);
+    return Promise.resolve({ ...data, id });
 }
 
 export async function adminDeleteBlogPost(id: number) {
-    const res = await fetch(`${API_URL}/api/blog/${id}`, {
-        method: 'DELETE',
-        headers: authHeaders(),
-    });
-    return handleResponse<{ success: boolean }>(res);
+    console.log('[Mock] Delete blog post:', id);
+    return Promise.resolve({ success: true });
 }
 
 // ─── Videos ───────────────────────────────────────────────────────────────────
 
 export async function adminGetVideos() {
-    const res = await fetch(`${API_URL}/api/videos`, { headers: authHeaders() });
-    return handleResponse<unknown[]>(res);
+    return Promise.resolve(videos);
 }
 
 export async function adminCreateVideo(data: Record<string, unknown>) {
-    const res = await fetch(`${API_URL}/api/videos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify(data),
-    });
-    return handleResponse<unknown>(res);
+    console.log('[Mock] Create video:', data);
+    return Promise.resolve({ ...data, id: Date.now() });
 }
 
 export async function adminUpdateVideo(id: number, data: Record<string, unknown>) {
-    const res = await fetch(`${API_URL}/api/videos/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify(data),
-    });
-    return handleResponse<unknown>(res);
+    console.log('[Mock] Update video:', id, data);
+    return Promise.resolve({ ...data, id });
 }
 
 export async function adminDeleteVideo(id: number) {
-    const res = await fetch(`${API_URL}/api/videos/${id}`, {
-        method: 'DELETE',
-        headers: authHeaders(),
-    });
-    return handleResponse<{ success: boolean }>(res);
+    console.log('[Mock] Delete video:', id);
+    return Promise.resolve({ success: true });
 }
 
 // ─── Media ────────────────────────────────────────────────────────────────────
@@ -260,37 +175,22 @@ export interface MediaObject {
 }
 
 export async function adminGetMedia(type?: 'image' | 'audio' | 'all'): Promise<MediaObject[]> {
-    const params = new URLSearchParams();
-    if (type && type !== 'all') params.set('type', type);
-    const query = params.toString() ? `?${params.toString()}` : '';
-    const res = await fetch(`${API_URL}/api/media${query}`, { headers: authHeaders() });
-    return handleResponse<MediaObject[]>(res);
+    console.log('[Mock] Get media:', type);
+    return Promise.resolve([]);
 }
 
 // ─── Uploads ──────────────────────────────────────────────────────────────────
 
 export async function adminUploadImage(file: File, key: string): Promise<{ url: string }> {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('key', key);
-    const res = await fetch(`${API_URL}/api/upload/image`, {
-        method: 'POST',
-        headers: authHeaders(),
-        body: formData,
-    });
-    return handleResponse<{ url: string }>(res);
+    console.log('[Mock] Upload image:', file.name, key);
+    // Return a placeholder URL
+    return Promise.resolve({ url: `https://via.placeholder.com/800x600?text=${encodeURIComponent(file.name)}` });
 }
 
 export async function adminUploadAudio(file: File, key: string): Promise<{ url: string }> {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('key', key);
-    const res = await fetch(`${API_URL}/api/upload/audio`, {
-        method: 'POST',
-        headers: authHeaders(),
-        body: formData,
-    });
-    return handleResponse<{ url: string }>(res);
+    console.log('[Mock] Upload audio:', file.name, key);
+    // Return a placeholder URL
+    return Promise.resolve({ url: `https://example.com/audio/${key}` });
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -316,67 +216,73 @@ export interface UpdateUserPayload {
 }
 
 export async function apiLogin(email: string, password: string): Promise<{ token: string }> {
-    const res = await fetch(`${API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-    });
-    return handleResponse<{ token: string }>(res);
+    // Mock authentication
+    if (email === MOCK_ADMIN_EMAIL && password === MOCK_ADMIN_PASSWORD) {
+        const mockToken = btoa(JSON.stringify({ sub: '1', email, role: 'admin', artist_id: null }));
+        return Promise.resolve({ token: mockToken });
+    }
+    throw new Error('Invalid email or password');
 }
 
 export async function apiGetMe(): Promise<AuthUser> {
-    const res = await fetch(`${API_URL}/api/auth/me`, { headers: authHeaders() });
-    return handleResponse<AuthUser>(res);
+    const token = getToken();
+    if (!token) throw new Error('Not authenticated');
+
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1] || token));
+        return Promise.resolve({
+            id: parseInt(payload.sub || '1'),
+            email: payload.email || MOCK_ADMIN_EMAIL,
+            role: payload.role || 'admin',
+            artist_id: payload.artist_id || null,
+        });
+    } catch {
+        throw new Error('Invalid token');
+    }
 }
 
 export async function apiCreateUser(data: CreateUserPayload): Promise<AuthUser> {
-    const res = await fetch(`${API_URL}/api/users`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify(data),
+    console.log('[Mock] Create user:', data);
+    return Promise.resolve({
+        id: Date.now(),
+        email: data.email,
+        role: data.role || 'artist',
+        artist_id: data.artist_id || null,
     });
-    return handleResponse<AuthUser>(res);
 }
 
 export async function apiUpdateUser(id: number, data: UpdateUserPayload): Promise<AuthUser> {
-    const res = await fetch(`${API_URL}/api/users/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify(data),
+    console.log('[Mock] Update user:', id, data);
+    return Promise.resolve({
+        id,
+        email: data.email || MOCK_ADMIN_EMAIL,
+        role: data.role || 'admin',
+        artist_id: data.artist_id || null,
     });
-    return handleResponse<AuthUser>(res);
 }
 
 export async function adminGetReleasesByArtist(artistId: number): Promise<unknown[]> {
-    const res = await fetch(`${API_URL}/api/releases?artist_id=${artistId}`, { headers: authHeaders() });
-    return handleResponse<unknown[]>(res);
+    return Promise.resolve(releases.filter((r) => r.artistId === artistId));
 }
 
 export async function adminGetEventsByArtist(artistId: number): Promise<unknown[]> {
-    const res = await fetch(`${API_URL}/api/events?artist_id=${artistId}`, { headers: authHeaders() });
-    return handleResponse<unknown[]>(res);
+    return Promise.resolve(events.filter((e) => e.artistId === artistId));
 }
 
 export async function adminGetBlogPostsByArtist(artistId: number): Promise<unknown[]> {
-    const res = await fetch(`${API_URL}/api/blog?artist_id=${artistId}`, { headers: authHeaders() });
-    return handleResponse<unknown[]>(res);
+    return Promise.resolve(blogPosts.filter((p) => p.artistId === artistId));
 }
 
 export async function adminGetVideosByArtist(artistId: number): Promise<unknown[]> {
-    const res = await fetch(`${API_URL}/api/videos?artist_id=${artistId}`, { headers: authHeaders() });
-    return handleResponse<unknown[]>(res);
+    return Promise.resolve(videos.filter((v) => v.artistId === artistId));
 }
 
 // ─── Health / Auth ────────────────────────────────────────────────────────────
 
 export async function adminVerifyToken(token: string): Promise<boolean> {
     try {
-        const res = await fetch(`${API_URL}/api/health`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.status === 401) return false;
-        const data = await res.json() as { admin?: boolean };
-        return data.admin === true;
+        const payload = JSON.parse(atob(token.split('.')[1] || token));
+        return payload.role === 'admin';
     } catch {
         return false;
     }
@@ -396,15 +302,34 @@ export interface PlaylistTrack {
 }
 
 export async function adminGetPlaylist(): Promise<PlaylistTrack[]> {
-    const res = await fetch(`${API_URL}/api/playlist`);
-    return handleResponse<PlaylistTrack[]>(res);
+    const tracks = getAllTracks();
+    return Promise.resolve(tracks.slice(0, 10).map(t => ({
+        id: t.id,
+        title: t.title,
+        duration: t.duration,
+        audioUrl: t.audioUrl,
+        featuring: t.featuring || '',
+        releaseTitle: t.releaseTitle || '',
+        coverImage: t.coverImage || '',
+        artist: t.artist || '',
+    })));
 }
 
 export async function adminSavePlaylist(trackIds: number[]): Promise<PlaylistTrack[]> {
-    const res = await fetch(`${API_URL}/api/playlist`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
-        body: JSON.stringify({ trackIds }),
-    });
-    return handleResponse<PlaylistTrack[]>(res);
+    console.log('[Mock] Save playlist:', trackIds);
+    const tracks = getAllTracks();
+    const playlistTracks = trackIds
+        .map(id => tracks.find(t => t.id === id))
+        .filter(Boolean)
+        .map(t => ({
+            id: t!.id,
+            title: t!.title,
+            duration: t!.duration,
+            audioUrl: t!.audioUrl,
+            featuring: t!.featuring || '',
+            releaseTitle: t!.releaseTitle || '',
+            coverImage: t!.coverImage || '',
+            artist: t!.artist || '',
+        }));
+    return Promise.resolve(playlistTracks);
 }
