@@ -8,6 +8,7 @@ import type { Artist } from '@/lib/data/artists';
 export default function FeaturedArtistsSection() {
     const [artists, setArtists] = useState<Artist[]>([]);
 
+    console.log('FeaturedArtistsSection rendered with artists:', artists);
     useEffect(() => {
         getFeaturedArtists().then(setArtists);
     }, []);
