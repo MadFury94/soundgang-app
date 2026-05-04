@@ -49,3 +49,4 @@ next-env.d.ts
 .kiro/
 .open-next/**/*
 next-app/node_modules/
+next-app/.next/
