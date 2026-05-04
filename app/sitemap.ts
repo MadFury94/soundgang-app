@@ -4,7 +4,7 @@ import { artists } from '@/lib/data/artists';
 import { blogPosts } from '@/lib/data/blog';
 import { releases } from '@/lib/data/releases';
 
-export const runtime = 'edge';
+export const dynamic = 'force-static';
 
 export default function sitemap(): MetadataRoute.Sitemap {
     const staticPages: MetadataRoute.Sitemap = [

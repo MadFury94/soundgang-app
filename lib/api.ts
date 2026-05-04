@@ -13,7 +13,7 @@ import type { Video } from '@/lib/data/videos';
 import { artists as staticArtists, getArtistBySlug as staticGetArtistBySlug } from '@/lib/data/artists';
 import { releases as staticReleases, getReleaseBySlug as staticGetReleaseBySlug, getAllTracks as staticGetAllTracks } from '@/lib/data/releases';
 import { events as staticEvents } from '@/lib/data/events';
-import { blogPosts as staticBlogPosts, getPostById as staticGetPostById } from '@/lib/data/blog';
+import { blogPosts as staticBlogPosts } from '@/lib/data/blog';
 import { videos as staticVideos } from '@/lib/data/videos';
 
 // ─── Artists ──────────────────────────────────────────────────────────────────
