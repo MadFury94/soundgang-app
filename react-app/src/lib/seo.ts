@@ -3,7 +3,7 @@
 // Centralised metadata helpers for all pages.
 // =============================================================================
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://soundgang.ng';
+const SITE_URL = import.meta.env.VITE_SITE_URL ?? 'https://soundgang.ng';
 const SITE_NAME = 'SoundGang';
 const DEFAULT_DESCRIPTION = 'SoundGang is Nigeria\'s premier record label, discovering and amplifying the brightest talents in contemporary African music.';
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.jpg`;

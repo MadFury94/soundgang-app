@@ -1,10 +1,20 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, MapPin, ArrowRight } from 'lucide-react';
 import WaveDivider from './WaveDivider';
 import { getUpcomingEvents } from '@/lib/api';
+import type { Event } from '@/lib/data/events';
 
-export default async function UpcomingShowsSection() {
-    const shows = await getUpcomingEvents();
+export default function UpcomingShowsSection() {
+    const [shows, setShows] = useState<Event[]>([]);
+
+    useEffect(() => {
+        getUpcomingEvents().then(setShows);
+    }, []);
+
+    if (shows.length === 0) {
+        return null;
+    }
 
     return (
         <section className="bg-black text-white">

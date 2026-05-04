@@ -1,10 +1,20 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import WaveDivider from './WaveDivider';
 import { getFeaturedArtists } from '@/lib/api';
+import type { Artist } from '@/lib/data/artists';
 
-export default async function FeaturedArtistsSection() {
-    const artists = await getFeaturedArtists();
+export default function FeaturedArtistsSection() {
+    const [artists, setArtists] = useState<Artist[]>([]);
+
+    useEffect(() => {
+        getFeaturedArtists().then(setArtists);
+    }, []);
+
+    if (artists.length === 0) {
+        return null;
+    }
 
     return (
         <section className="bg-black text-white">

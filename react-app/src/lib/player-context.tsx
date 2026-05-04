@@ -103,7 +103,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     // Auto-load all tracks into the queue on mount so the player bar is visible
     useEffect(() => {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'https://soundgang-api.onochieazukaeme.workers.dev';
+        const apiUrl = import.meta.env.VITE_API_URL ?? 'https://soundgang-api.onochieazukaeme.workers.dev';
         fetch(`${apiUrl}/api/playlist`)
             .then((res) => res.json())
             .then((data: unknown) => {

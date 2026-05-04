@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-;
 
 export default function Footer() {
     return (
@@ -9,7 +8,7 @@ export default function Footer() {
                     {/* Brand Section */}
                     <div className="sm:col-span-2 lg:col-span-1">
                         <div className="flex items-center gap-2 mb-4">
-                            <Image
+                            <img
                                 src="/soundgang-logo.png"
                                 alt="SoundGang Logo"
                                 width={77}
