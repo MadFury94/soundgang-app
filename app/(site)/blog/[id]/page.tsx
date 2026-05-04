@@ -4,8 +4,6 @@ import { notFound } from 'next/navigation';
 import { getPostById, getLatestPosts } from '@/lib/data/blog';
 import { buildMetadata, buildBlogJsonLd } from '@/lib/seo';
 
-export const runtime = 'edge';
-
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const post = getPostById(Number(id));
