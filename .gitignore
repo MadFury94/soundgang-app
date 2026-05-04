@@ -47,3 +47,5 @@ next-env.d.ts
 
 # Kiro spec files (local dev tooling, not needed in deployment)
 .kiro/
+.open-next/**/*
+next-app/node_modules/
