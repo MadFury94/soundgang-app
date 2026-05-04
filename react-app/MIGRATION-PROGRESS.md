@@ -41,14 +41,21 @@ react-app/
 
 ### E) Theme Provider ✅
 - ✅ Created `src/providers/ThemeProvider.tsx` (replaced next-themes)
-- ✅ Integrated with RootLayout
+- ✅ Integrated with `app/root.tsx` using React Router v7 conventions
+- ✅ Fixed React 19 type imports (ReactNode as type import)
 
-### F) Layouts ✅
-- ✅ Created `src/layouts/RootLayout.tsx` (with HelmetProvider)
-- ✅ Created `src/layouts/SiteLayout.tsx` (Header, Footer, Player)
+### F) Root & Layouts ✅
+- ✅ Updated `app/root.tsx` with proper React Router v7 structure
+  - ✅ Added ThemeProvider directly in root
+  - ✅ Imported global CSS with direct import
+  - ✅ Removed react-helmet-async (using native `<Meta />` component)
+- ✅ Created `app/layouts/site.tsx` (Header, Footer, Player)
+- ✅ Configured `app/routes.ts` with proper route hierarchy
 
 ### G) Routes (Public) - IN PROGRESS
-- ✅ Created `src/routes/index.tsx` (Home page with all sections)
+- ✅ Created `app/routes/home.tsx` (Home page with all sections)
+  - ✅ Using React Router's `meta` export instead of Helmet
+  - ✅ Proper SEO with JSON-LD structured data
 - [ ] Create `src/routes/about.tsx`
 - [ ] Create `src/routes/contact.tsx`
 - [ ] Create `src/routes/releases.tsx`
@@ -86,7 +93,7 @@ react-app/
 ### UI & Utilities
 - lucide-react (icons)
 - sonner (toast notifications)
-- react-helmet-async (SEO/meta tags)
+- ~~react-helmet-async~~ ✅ Removed (using React Router's native `meta` export)
 
 ## 🎯 Next Steps (Phase 3: Remaining Routes)
 
