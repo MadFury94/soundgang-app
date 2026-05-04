@@ -6,8 +6,6 @@ import type { Artist } from '@/lib/data/artists';
 import { buildMetadata, buildArtistJsonLd } from '@/lib/seo';
 import ArtistEmptyState from '@/components/admin/ArtistEmptyState';
 
-export const runtime = 'edge';
-
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     const artist = await getArtistBySlug(slug);
